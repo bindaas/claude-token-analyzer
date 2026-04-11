@@ -15,7 +15,7 @@ No API keys, no dashboards, no code to run. Just two prompts and Markdown files.
 
 | File | Role |
 |---|---|
-| `global_prompt_token_analysis.md` | The tracking prompt — add globally so it's always available. |
+| `global_prompt_token_analysis.md` | The tracking prompt — add globally so it's always active. |
 | `multi_session_analysis_prompt.md` | Paste into a fresh session with your saved reports to get trend analysis. |
 | `token_cost_and_habits_reference.md` | Reference sheet: pricing, token size intuitions, ranked habit changes, session tags, efficiency score guide. |
 | `README.md` | Setup and usage instructions (including per-platform setup). |
@@ -36,7 +36,7 @@ The chat interface at claude.ai and the Claude desktop app (chat mode, not the C
 2. Paste the full contents of `global_prompt_token_analysis.md`
 3. Save
 
-Every new conversation will now have tracking available on demand.
+Every new conversation will now have tracking active automatically from turn one.
 
 ### Claude Code CLI (`claude` in terminal)
 
@@ -49,19 +49,19 @@ cat /path/to/repo/global_prompt_token_analysis.md >> ~/.claude/CLAUDE.md
 
 Or open `~/.claude/CLAUDE.md` in an editor and paste the contents of `global_prompt_token_analysis.md`.
 
-The trigger phrases will work in every `claude` session with no flags needed.
-
 > To limit tracking to a specific project instead of globally, copy the content into a `CLAUDE.md` in that project's root directory.
 
 ---
 
 ## How the session tracking works
 
-### Trigger phrases (same in both interfaces)
+### How tracking starts
+Tracking is always on from turn one — no trigger phrase needed. Claude silently observes from the first message.
+
+### Trigger to generate a report
 | Phrase | Effect |
 |---|---|
-| `START token usage analysis` | Claude acknowledges tracking is active and silently begins observing. |
-| `END token usage analysis` | Claude generates a full Markdown session report. |
+| `END token usage analysis` | Claude generates a full Markdown session report covering the entire session. |
 
 ### What Claude tracks silently
 - Number of conversation turns (session length signal)
@@ -86,13 +86,15 @@ Reports are saved to `~/.claude/token-reports/` — the canonical location for a
 
 **CLI:** Claude Code saves automatically. No action needed.
 
-**Desktop / claude.ai:** Claude prints a ready-to-run terminal command at the end of each report. Paste the report, run the command, done.
+**Desktop / claude.ai:** Claude prints save instructions with a ready-to-run terminal command at the end of each report.
 
 Naming convention:
 ```
-session_YYYY-MM-DD_topic-slug.md
+session_YYYY-MM-DD_HHmm_topic-slug.md
 ```
-Example: `session_2025-03-14_api-debugging.md`
+Example: `session_2025-03-14_1030_api-debugging.md`
+
+The time component prevents overwriting multiple reports generated on the same day.
 
 ---
 
@@ -179,7 +181,7 @@ Verify current rates: [anthropic.com/pricing](https://anthropic.com/pricing)
 ## Important caveats
 
 - Token counts in session reports are **estimates based on conversational signals**, not exact API measurements. For precise counts, check the Anthropic API usage dashboard or the `usage` field in API responses.
-- The trigger phrases and report format work identically in Claude.ai, Claude desktop chat, and Claude Code CLI — no changes to the prompts are needed.
+- The report trigger works identically in Claude.ai, Claude desktop chat, and Claude Code CLI — no changes to the prompts are needed.
 - Pricing in `token_cost_and_habits_reference.md` reflects Sonnet 4 mid-2025 rates — verify before relying on cost estimates.
 
 ---

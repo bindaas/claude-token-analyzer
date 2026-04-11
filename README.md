@@ -7,7 +7,7 @@ A lightweight system for understanding and improving how you use Claude tokens a
 ## What this is
 
 A two-prompt system that:
-1. Tracks your token usage habits within a session and generates a structured report
+1. Tracks your token usage habits within a session and generates a structured report on demand
 2. Analyzes reports across multiple sessions to surface trends and coaching insights
 
 No API keys, no tooling, no dashboards. Just prompts and Markdown files.
@@ -39,9 +39,9 @@ This is the web app at claude.ai or the Claude desktop app in **chat mode** (not
 
 1. Open Claude → **Settings** → **Profile** → **Personal Preferences**
 2. Copy the full contents of `global_prompt_token_analysis.md`
-3. Paste it into the preferences field. Save.
+3. Paste it into the preferences field and save.
 
-The tracking prompt is now loaded automatically into every new conversation.
+The tracking prompt is now loaded automatically into every new conversation. No trigger phrase needed — tracking is always on.
 
 > **Note:** Personal Preferences apply globally across all your conversations in Claude.ai and the desktop chat interface.
 
@@ -63,25 +63,17 @@ cat /path/to/this/repo/global_prompt_token_analysis.md >> ~/.claude/CLAUDE.md
 
 Or open `~/.claude/CLAUDE.md` in any editor and paste the contents of `global_prompt_token_analysis.md` at the top or bottom.
 
-The tracking commands will now be available in every `claude` session automatically, with no flags needed.
-
-> **Note:** `~/.claude/CLAUDE.md` is your global config — it applies to all Claude Code sessions across all projects. If you only want it for specific projects, copy the content into a `CLAUDE.md` in that project's root directory instead.
+> **Note:** `~/.claude/CLAUDE.md` is your global config — it applies to all Claude Code sessions across all projects. To limit tracking to a specific project, copy the content into a `CLAUDE.md` in that project's root directory instead.
 
 ---
 
 ## Using it (same for both setups)
 
-### Start a session
-At the beginning of any conversation you want to track, type:
+### How tracking works
+Tracking is always active from turn one — no start command needed. Claude silently observes your usage patterns throughout the conversation.
 
-```
-START token usage analysis
-```
-
-Claude will confirm tracking is active and begin observing your patterns silently.
-
-### End a session and get your report
-When you're done, type:
+### Get your report
+When you're done with a session, type:
 
 ```
 END token usage analysis
@@ -94,15 +86,18 @@ Claude will generate a Markdown report and attempt to save it automatically.
 **Desktop / claude.ai:** Claude will print save instructions including a ready-to-run terminal command:
 ```bash
 mkdir -p ~/.claude/token-reports
-pbpaste > ~/.claude/token-reports/session_YYYY-MM-DD_topic-slug.md
+cat > ~/.claude/token-reports/session_YYYY-MM-DD_HHmm_topic-slug.md
+# Paste the report, then press Ctrl+D
 ```
 
 All reports live in `~/.claude/token-reports/` regardless of which interface generated them. Example filenames:
 ```
-session_2025-03-10_api-debugging.md
-session_2025-03-14_writing-project.md
-session_2025-03-19_data-analysis.md
+session_2025-03-10_0930_api-debugging.md
+session_2025-03-14_1445_writing-project.md
+session_2025-03-19_1100_data-analysis.md
 ```
+
+The time component (`HHmm`) prevents overwriting reports from the same day.
 
 ### Analyze trends across sessions
 Once you have 3 or more reports in `~/.claude/token-reports/`:
@@ -145,4 +140,4 @@ Save the output as:
 
 - Token counts are **estimates** based on conversational signals, not exact API measurements. For exact counts, check your Anthropic API usage dashboard.
 - Pricing reference in `token_cost_and_habits_reference.md` reflects Sonnet 4 mid-2025 rates. Verify current rates at [anthropic.com/pricing](https://anthropic.com/pricing).
-- The tracking commands work identically in both Claude.ai/desktop chat and Claude Code CLI — no changes to the prompts are needed between environments.
+- The report trigger (`END token usage analysis`) works identically in both Claude.ai/desktop chat and Claude Code CLI.
