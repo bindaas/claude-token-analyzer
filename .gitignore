@@ -1,5 +1,10 @@
-# Token usage session reports — personal data, not for version control
+# Token usage reports — personal data, not for version control
+token-report*.md
+
+# Legacy naming (kept for backwards compatibility)
 session_*.md
 
 # Trend analysis reports
 usage_analysis_*.md
+
+.DS_Store

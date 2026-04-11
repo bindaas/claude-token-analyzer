@@ -2,12 +2,11 @@
 
 ## What this project is
 
-A zero-tooling, prompt-only system for tracking and improving Claude token usage habits. It has two parts:
+A zero-tooling, prompt-only system for tracking and improving Claude token usage habits.
 
-1. **Session tracking** — A prompt that makes Claude observe your usage patterns and generate a structured report at the end of any session.
-2. **Multi-session analysis** — A second prompt that accepts several saved session reports and identifies trends, recurring habits, and the highest-impact changes to make.
+**Single purpose:** `global_prompt_token_analysis.md` does one thing and one thing only — token usage tracking and reporting. It is designed to be shared globally across all Claude projects and Claude Code CLI sessions. It has no other responsibilities (no session management, no git ops, no unrelated tooling).
 
-No API keys, no dashboards, no code to run. Just two prompts and Markdown files.
+The project also includes a companion prompt for multi-session trend analysis, but that is a separate tool used on demand — not part of the global prompt.
 
 ---
 
@@ -15,8 +14,8 @@ No API keys, no dashboards, no code to run. Just two prompts and Markdown files.
 
 | File | Role |
 |---|---|
-| `global_prompt_token_analysis.md` | The tracking prompt — add globally so it's always active. |
-| `multi_session_analysis_prompt.md` | Paste into a fresh session with your saved reports to get trend analysis. |
+| `global_prompt_token_analysis.md` | **The global tracking prompt.** Single-purpose. Add to personal preferences or `~/.claude/CLAUDE.md` so it's always active. |
+| `multi_session_analysis_prompt.md` | Paste into a fresh session with saved reports for trend analysis. Used on demand, not globally. |
 | `token_cost_and_habits_reference.md` | Reference sheet: pricing, token size intuitions, ranked habit changes, session tags, efficiency score guide. |
 | `README.md` | Setup and usage instructions (including per-platform setup). |
 | `claude.md` | This file — project overview for future Claude sessions. |
@@ -26,11 +25,7 @@ No API keys, no dashboards, no code to run. Just two prompts and Markdown files.
 
 ## Setup — by platform
 
-The tracker works across both Claude interfaces. Setup differs per platform.
-
 ### Claude.ai / Claude Desktop (chat interface)
-
-The chat interface at claude.ai and the Claude desktop app (chat mode, not the Code tab) support **Personal Preferences** — a global instruction set loaded into every conversation.
 
 1. Go to **Settings → Profile → Personal Preferences**
 2. Paste the full contents of `global_prompt_token_analysis.md`
@@ -40,14 +35,12 @@ Every new conversation will now have tracking active automatically from turn one
 
 ### Claude Code CLI (`claude` in terminal)
 
-Claude Code automatically loads `~/.claude/CLAUDE.md` before every session. Add the tracking prompt there to make it globally available:
+Claude Code automatically loads `~/.claude/CLAUDE.md` before every session:
 
 ```bash
 mkdir -p ~/.claude
 cat /path/to/repo/global_prompt_token_analysis.md >> ~/.claude/CLAUDE.md
 ```
-
-Or open `~/.claude/CLAUDE.md` in an editor and paste the contents of `global_prompt_token_analysis.md`.
 
 > To limit tracking to a specific project instead of globally, copy the content into a `CLAUDE.md` in that project's root directory.
 
@@ -55,64 +48,55 @@ Or open `~/.claude/CLAUDE.md` in an editor and paste the contents of `global_pro
 
 ## How the session tracking works
 
-### How tracking starts
-Tracking is always on from turn one — no trigger phrase needed. Claude silently observes from the first message.
+### Tracking starts
+Always on from turn one — no trigger phrase needed.
 
 ### Trigger to generate a report
 | Phrase | Effect |
 |---|---|
-| `END token usage analysis` | Claude generates a full Markdown session report covering the entire session. |
+| `END token usage analysis` | Claude generates a full Markdown session report. |
+| Wrapping-up language | Same effect (e.g. "we're done", "let's wrap up"). |
 
 ### What Claude tracks silently
-- Number of conversation turns (session length signal)
+- Number of conversation turns
 - Large pastes (documents, code blocks)
 - Vague vs. precise prompts
 - Rework loops (revisions, redos)
 - Unnecessary re-sending of prior context
-- Outputs that were longer than needed
-
-### Session report output (template fields)
-- Input / output token estimates with reasoning
-- Estimated cost in USD (based on Sonnet 4 rates)
-- Efficiency score (1–10)
-- Patterns that increased or wasted tokens
-- Patterns that kept usage efficient
-- Habit recommendations with estimated savings impact
-- Session tags for filtering
-
-### Saving session reports
-
-Reports are saved to `~/.claude/token-reports/` — the canonical location for all sessions regardless of interface.
-
-**CLI:** Claude Code saves automatically. No action needed.
-
-**Desktop / claude.ai:** Claude prints save instructions with a ready-to-run terminal command at the end of each report.
-
-Naming convention:
-```
-session_YYYY-MM-DD_HHmm_topic-slug.md
-```
-Example: `session_2025-03-14_1030_api-debugging.md`
-
-The time component prevents overwriting multiple reports generated on the same day.
+- Outputs longer than needed
 
 ---
 
-## How multi-session analysis works (part 2)
+## Report naming convention
+
+```
+token-report_YYYY-MM-DD_HHmm_topic-slug.md
+```
+
+Example: `token-report_2025-03-14_1030_api-debugging.md`
+
+The `token-report_` prefix ensures consistent glob matching. The time component prevents overwriting multiple reports on the same day.
+
+---
+
+## Where reports are saved
+
+Reports are saved in this priority order:
+
+1. **`~/.claude/token-reports/`** — canonical location, tried first on all interfaces
+2. **Current working directory** — CLI fallback if `~/.claude/token-reports/` is not accessible
+3. **Downloadable file** — Desktop/claude.ai fallback if filesystem is not accessible
+
+If this is a git project, `.gitignore` is updated automatically to exclude `token-report*.md`.
+
+---
+
+## How multi-session analysis works
 
 Once you have 3+ session reports in `~/.claude/token-reports/`:
 1. Open a new Claude Code session.
 2. Paste the full contents of `multi_session_analysis_prompt.md`.
 3. Paste your saved session `.md` files below the `--- SESSION REPORTS BELOW ---` divider (or reference the directory directly in CLI).
-4. Send. Claude returns a trend analysis report.
-
-### What the trend analysis covers
-- Input/output token direction over time (up / down / stable)
-- Cost trajectory
-- Recurring habits (patterns appearing in 2+ sessions — your real habits)
-- Top 3 changes ranked by estimated token savings
-- Efficiency score movement over time
-- One blind-spot observation you probably haven't noticed yourself
 
 Save trend reports as:
 ```
@@ -128,67 +112,13 @@ Save trend reports as:
 | Input | ~$0.003 / 1K tokens |
 | Output | ~$0.015 / 1K tokens |
 
-Output tokens cost **5× more** than input — long responses are the biggest cost lever.
-
-Verify current rates: [anthropic.com/pricing](https://anthropic.com/pricing)
-
----
-
-## Token size intuitions
-
-| Content | Approx. tokens |
-|---|---|
-| 750 words of prose | ~1,000 |
-| 1 document page | ~750 |
-| 100 lines of code | ~300–600 |
-| Medium chat exchange (4–6 turns) | ~800–1,200 |
-| Detailed system prompt | ~500–1,500 |
-| Pasted PDF page | ~600–900 |
-
----
-
-## Top habits (ranked by savings impact)
-
-1. **Stop re-pasting full documents** — reference by name/section instead. *(high)*
-2. **Be specific on the first ask** — vague prompts generate long hedged replies + follow-up rounds. *(high)*
-3. **Constrain output length explicitly** — add "in 3 bullets", "under 150 words", "just the code". *(high)*
-4. **Don't repeat established context** — Claude holds prior turns; no need to re-summarize. *(medium)*
-5. **Surgical revision requests** — "change only the opening sentence" not "here it all is, improve it". *(medium)*
-6. **Break sprawling tasks into focused sub-tasks** — tighter prompts, tighter outputs. *(medium)*
-7. **Prefer "recommendation first" for decisions** — ask for reasoning only if needed. *(low–medium)*
-8. **Use code blocks and structure for technical input** — reduces clarification overhead. *(low)*
-
----
-
-## Efficiency score guide
-
-| Score | Meaning |
-|---|---|
-| 9–10 | Tight session — precise prompts, no rework, minimal waste |
-| 7–8 | Generally efficient with minor waste |
-| 5–6 | Mixed — some good habits, some bloat or rework |
-| 3–4 | Several inefficiencies — rework loops, vague prompts, large repastes |
-| 1–2 | Heavy waste throughout |
-
----
-
-## Session tags reference
-
-`#heavy-input` `#heavy-output` `#rework-loops` `#large-pastes` `#vague-prompts` `#precise-prompts` `#efficient` `#context-bloat` `#unnecessary-history` `#long-outputs` `#code-heavy` `#document-heavy` `#conversation-heavy`
-
----
-
-## Important caveats
-
-- Token counts in session reports are **estimates based on conversational signals**, not exact API measurements. For precise counts, check the Anthropic API usage dashboard or the `usage` field in API responses.
-- The report trigger works identically in Claude.ai, Claude desktop chat, and Claude Code CLI — no changes to the prompts are needed.
-- Pricing in `token_cost_and_habits_reference.md` reflects Sonnet 4 mid-2025 rates — verify before relying on cost estimates.
+Output tokens cost **5× more** than input. Verify current rates at [anthropic.com/pricing](https://anthropic.com/pricing).
 
 ---
 
 ## If you're editing this project
 
-- The core logic lives entirely in `global_prompt_token_analysis.md` (the tracking behavior and report template).
-- The multi-session analysis logic is self-contained in `multi_session_analysis_prompt.md`.
-- `token_cost_and_habits_reference.md` is a standalone reference — update pricing whenever Anthropic changes rates.
-- There is no code, no dependencies, and no build step. The whole system is prompt text and Markdown conventions.
+- The core logic lives entirely in `global_prompt_token_analysis.md`. Keep it single-purpose — token tracking only.
+- Do not add session management, git workflows, or unrelated instructions to the global prompt.
+- `multi_session_analysis_prompt.md` is self-contained — edit independently.
+- No code, no dependencies, no build step. The whole system is prompt text and Markdown conventions.
