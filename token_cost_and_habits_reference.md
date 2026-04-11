@@ -30,48 +30,56 @@ Output tokens cost 5× more than input. Long responses are your biggest lever.
 
 ## High-impact habits (ranked by token savings)
 
-### 1. Stop re-pasting full documents
+### 1. Don't paste project docs — let Claude read them on demand
+**Impact: high**
+Pasting a full `claude.md` or project document at the start of a session loads all those tokens immediately, whether Claude needs them or not. If you have filesystem access (e.g. via the MCP connector in Claude.ai or Claude Code), instruct Claude to "read claude.md when necessary" instead. Claude will only load the file when the task actually requires it — and skip it entirely for sessions that don't need project context.
+- Instead of: pasting the full contents of `claude.md` at the start of every session
+- Do: add "read claude.md when necessary" to your project instructions and let Claude pull it on demand
+
+> **Note:** This only works when Claude has filesystem access. In a standard Claude.ai chat without a filesystem connector, Claude cannot read files and the instruction has no effect.
+
+### 2. Stop re-pasting full documents
 **Impact: high**
 If you've already shared a document this session, reference it by name or section. Don't paste it again.
 - Instead of: pasting 3,000 words again with "update section 2"
 - Do: "In the document above, update only the second paragraph of section 2 to say X"
 
-### 2. Be specific on the first ask
+### 3. Be specific on the first ask
 **Impact: high**
 Vague prompts generate long hedged outputs, then require follow-up clarification — doubling the exchange.
 - Instead of: "Can you help me with my code?"
 - Do: "In the Python function `parse_csv()`, fix the KeyError on line 14 — the key is sometimes missing"
 
-### 3. Constrain output length explicitly
+### 4. Constrain output length explicitly
 **Impact: high**
 Claude defaults to thorough. If you don't need thorough, say so.
 - Add: "in 3 bullet points", "under 150 words", "one paragraph only", "just the code, no explanation"
 - This alone can cut output tokens by 50–70% on explanatory tasks
 
-### 4. Don't repeat established context
+### 5. Don't repeat established context
 **Impact: medium**
 Claude holds everything said earlier in the session window. You don't need to re-summarize the situation each message.
 - Instead of: re-explaining the project background every message
 - Do: refer back — "given what we discussed about the auth flow..."
 
-### 5. Use surgical revision requests
+### 6. Use surgical revision requests
 **Impact: medium**
 "Here's the full thing, please improve it" forces Claude to re-read and re-output everything.
 - Instead of: repasting 500 words with "make this better"
 - Do: "Change only the opening sentence — make it more direct. Leave the rest."
 
-### 6. Break sprawling tasks into focused sub-tasks
+### 7. Break sprawling tasks into focused sub-tasks
 **Impact: medium**
 One large messy prompt generates a large hedged response. Sequential focused prompts generate tighter, more accurate outputs with less waste.
 - Instead of: "Write a blog post, make it SEO optimized, add a CTA, and suggest 5 titles"
 - Do: start with the post, then optimize, then CTA, then titles — separately
 
-### 7. Prefer "yes/no first" for decision questions
+### 8. Prefer "yes/no first" for decision questions
 **Impact: low–medium**
 Asking "should I use PostgreSQL or SQLite?" generates a lengthy comparison. If you just need a call:
 - Add: "give me your recommendation in one sentence, I can ask for reasoning if needed"
 
-### 8. Use code blocks and structure for technical input
+### 9. Use code blocks and structure for technical input
 **Impact: low**
 Well-structured input (proper code blocks, clear variable names, labeled sections) reduces the clarification Claude needs and tightens the response.
 

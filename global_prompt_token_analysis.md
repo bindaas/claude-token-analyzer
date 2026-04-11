@@ -65,7 +65,7 @@ Use this template exactly:
 [3–5 tags from: #heavy-input #heavy-output #rework-loops #large-pastes #vague-prompts #precise-prompts #efficient #context-bloat #unnecessary-history #long-outputs #code-heavy #document-heavy #conversation-heavy]
 
 ---
-*Save this report as: `session_[YYYY-MM-DD]_[HHmm]_[topic-slug].md`*
+*Filename: `session_[YYYY-MM-DD]_[HHmm]_[topic-slug].md`*
 
 ---
 
@@ -73,33 +73,13 @@ Use this template exactly:
 
 Use the filename `session_[YYYY-MM-DD]_[HHmm]_[topic-slug].md` (include time to avoid overwriting same-day reports).
 
-**If you are running as Claude Code (CLI):**
-- Create the directory if it doesn't exist: `mkdir -p ~/.claude/token-reports`
-- Write the report file there directly
-- Confirm success with: `✅ Report saved to ~/.claude/token-reports/session_[YYYY-MM-DD]_[HHmm]_[topic-slug].md`
-- If the current project is a git repo (i.e. a `.git` directory exists), check whether a `.gitignore` exists. If it does, ensure `session_*.md` and `usage_analysis_*.md` are in it. If it doesn't exist, create one with those entries. Inform the user what was done.
+**Step 1 — Check filesystem access**
+Try to access `~/.claude/token-reports/`. If you can reach it, save there automatically. If not, fall through to Step 2.
 
-**If you do NOT have filesystem access (Desktop app / claude.ai chat):**
+**Step 2 — Save automatically (filesystem access available)**
+- Create the directory if needed: `~/.claude/token-reports/`
+- Write the report file directly
+- Confirm: `✅ Report saved to ~/.claude/token-reports/session_[YYYY-MM-DD]_[HHmm]_[topic-slug].md`
 
-Print this block exactly:
-
----
-📁 **To save this report (Desktop / claude.ai)**
-
-You're in a chat interface — I can't write files directly. Copy the report above, then save it as:
-```
-~/.claude/token-reports/session_[YYYY-MM-DD]_[HHmm]_[topic-slug].md
-```
-
-**Mac:** Copy the report, then run:
-```bash
-mkdir -p ~/.claude/token-reports
-cat > ~/.claude/token-reports/session_[YYYY-MM-DD]_[HHmm]_[topic-slug].md
-# Paste the report, then press Ctrl+D
-```
-
-**Or** open any text editor, paste the report, and save it to `~/.claude/token-reports/` with the filename above.
-
-To include it in future multi-session analysis, make sure it ends up in `~/.claude/token-reports/`.
-
----
+**Step 3 — No filesystem access**
+Simply output the report as plain text in the chat. Do not print save instructions, terminal commands, or copy-paste blocks. The user will save it wherever they want.
