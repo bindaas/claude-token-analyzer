@@ -1,4 +1,4 @@
-# Token Usage Tracker — README
+# Token Usage Analysis — README
 
 A lightweight system for understanding and improving how you use Claude tokens across sessions.
 
@@ -18,11 +18,12 @@ No API keys, no tooling, no dashboards. Just prompts and Markdown files.
 
 | File | Purpose |
 |---|---|
-| `part1_global_settings_prompt.md` | The tracking prompt — add it globally so it's always available |
-| `part2_multi_session_analysis_prompt.md` | Paste into a new session with your reports to get trend analysis |
+| `global_prompt_token_analysis.md` | The tracking prompt — add it globally so it's always available |
+| `multi_session_analysis_prompt.md` | Paste into a new session with your reports to get trend analysis |
 | `README.md` | This file |
 | `token_cost_and_habits_reference.md` | Cost estimates, token size intuitions, and high-impact habits |
 | `claude.md` | Project reference for future Claude sessions |
+| `~/.claude/token-reports/` | Canonical location for all saved session reports (outside this repo) |
 
 ---
 
@@ -37,7 +38,7 @@ The tracker works in both **Claude.ai / Desktop chat** and **Claude Code CLI**. 
 This is the web app at claude.ai or the Claude desktop app in **chat mode** (not the Code tab).
 
 1. Open Claude → **Settings** → **Profile** → **Personal Preferences**
-2. Copy the full contents of `part1_global_settings_prompt.md`
+2. Copy the full contents of `global_prompt_token_analysis.md`
 3. Paste it into the preferences field. Save.
 
 The tracking prompt is now loaded automatically into every new conversation.
@@ -57,10 +58,10 @@ Claude Code automatically reads a global `CLAUDE.md` file before every session. 
 mkdir -p ~/.claude
 
 # Append the tracking prompt to your global CLAUDE.md
-cat /path/to/this/repo/part1_global_settings_prompt.md >> ~/.claude/CLAUDE.md
+cat /path/to/this/repo/global_prompt_token_analysis.md >> ~/.claude/CLAUDE.md
 ```
 
-Or open `~/.claude/CLAUDE.md` in any editor and paste the contents of `part1_global_settings_prompt.md` at the top or bottom.
+Or open `~/.claude/CLAUDE.md` in any editor and paste the contents of `global_prompt_token_analysis.md` at the top or bottom.
 
 The tracking commands will now be available in every `claude` session automatically, with no flags needed.
 
@@ -86,13 +87,17 @@ When you're done, type:
 END token usage analysis
 ```
 
-Claude will generate a Markdown report. Copy it and save it as:
+Claude will generate a Markdown report and attempt to save it automatically.
 
-```
-session_YYYY-MM-DD_topic-slug.md
+**CLI (Claude Code):** The report is written directly to `~/.claude/token-reports/` — no action needed.
+
+**Desktop / claude.ai:** Claude will print save instructions including a ready-to-run terminal command:
+```bash
+mkdir -p ~/.claude/token-reports
+pbpaste > ~/.claude/token-reports/session_YYYY-MM-DD_topic-slug.md
 ```
 
-Example filenames:
+All reports live in `~/.claude/token-reports/` regardless of which interface generated them. Example filenames:
 ```
 session_2025-03-10_api-debugging.md
 session_2025-03-14_writing-project.md
@@ -100,16 +105,16 @@ session_2025-03-19_data-analysis.md
 ```
 
 ### Analyze trends across sessions
-Once you have 3 or more reports:
+Once you have 3 or more reports in `~/.claude/token-reports/`:
 
-1. Open a new Claude session (either interface)
-2. Copy the contents of `part2_multi_session_analysis_prompt.md`
-3. Paste your session `.md` files below the divider line
+1. Open a new Claude Code session
+2. Copy the contents of `multi_session_analysis_prompt.md`
+3. Paste your session `.md` files below the divider line (or reference the `~/.claude/token-reports/` directory directly if running in CLI)
 4. Send — Claude returns a trend analysis report
 
 Save the output as:
 ```
-usage_analysis_YYYY-MM.md
+~/.claude/token-reports/usage_analysis_YYYY-MM.md
 ```
 
 ---

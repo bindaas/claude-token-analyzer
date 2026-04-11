@@ -1,0 +1,5 @@
+# Token usage session reports — personal data, not for version control
+session_*.md
+
+# Trend analysis reports
+usage_analysis_*.md

@@ -15,11 +15,12 @@ No API keys, no dashboards, no code to run. Just two prompts and Markdown files.
 
 | File | Role |
 |---|---|
-| `part1_global_settings_prompt.md` | The tracking prompt — add globally so it's always available. |
-| `part2_multi_session_analysis_prompt.md` | Paste into a fresh session with your saved reports to get trend analysis. |
+| `global_prompt_token_analysis.md` | The tracking prompt — add globally so it's always available. |
+| `multi_session_analysis_prompt.md` | Paste into a fresh session with your saved reports to get trend analysis. |
 | `token_cost_and_habits_reference.md` | Reference sheet: pricing, token size intuitions, ranked habit changes, session tags, efficiency score guide. |
 | `README.md` | Setup and usage instructions (including per-platform setup). |
 | `claude.md` | This file — project overview for future Claude sessions. |
+| `~/.claude/token-reports/` | Canonical location for all saved session and trend reports (outside this repo). |
 
 ---
 
@@ -32,7 +33,7 @@ The tracker works across both Claude interfaces. Setup differs per platform.
 The chat interface at claude.ai and the Claude desktop app (chat mode, not the Code tab) support **Personal Preferences** — a global instruction set loaded into every conversation.
 
 1. Go to **Settings → Profile → Personal Preferences**
-2. Paste the full contents of `part1_global_settings_prompt.md`
+2. Paste the full contents of `global_prompt_token_analysis.md`
 3. Save
 
 Every new conversation will now have tracking available on demand.
@@ -43,10 +44,10 @@ Claude Code automatically loads `~/.claude/CLAUDE.md` before every session. Add 
 
 ```bash
 mkdir -p ~/.claude
-cat /path/to/repo/part1_global_settings_prompt.md >> ~/.claude/CLAUDE.md
+cat /path/to/repo/global_prompt_token_analysis.md >> ~/.claude/CLAUDE.md
 ```
 
-Or open `~/.claude/CLAUDE.md` in an editor and paste the contents of `part1_global_settings_prompt.md`.
+Or open `~/.claude/CLAUDE.md` in an editor and paste the contents of `global_prompt_token_analysis.md`.
 
 The trigger phrases will work in every `claude` session with no flags needed.
 
@@ -80,7 +81,14 @@ The trigger phrases will work in every `claude` session with no flags needed.
 - Session tags for filtering
 
 ### Saving session reports
-Save each report as a `.md` file using the naming convention:
+
+Reports are saved to `~/.claude/token-reports/` — the canonical location for all sessions regardless of interface.
+
+**CLI:** Claude Code saves automatically. No action needed.
+
+**Desktop / claude.ai:** Claude prints a ready-to-run terminal command at the end of each report. Paste the report, run the command, done.
+
+Naming convention:
 ```
 session_YYYY-MM-DD_topic-slug.md
 ```
@@ -90,10 +98,10 @@ Example: `session_2025-03-14_api-debugging.md`
 
 ## How multi-session analysis works (part 2)
 
-Once you have 3+ session reports:
-1. Open a new Claude session (either interface).
-2. Paste the full contents of `part2_multi_session_analysis_prompt.md`.
-3. Paste your saved session `.md` files below the `--- SESSION REPORTS BELOW ---` divider.
+Once you have 3+ session reports in `~/.claude/token-reports/`:
+1. Open a new Claude Code session.
+2. Paste the full contents of `multi_session_analysis_prompt.md`.
+3. Paste your saved session `.md` files below the `--- SESSION REPORTS BELOW ---` divider (or reference the directory directly in CLI).
 4. Send. Claude returns a trend analysis report.
 
 ### What the trend analysis covers
@@ -106,7 +114,7 @@ Once you have 3+ session reports:
 
 Save trend reports as:
 ```
-usage_analysis_YYYY-MM.md
+~/.claude/token-reports/usage_analysis_YYYY-MM.md
 ```
 
 ---
@@ -178,7 +186,7 @@ Verify current rates: [anthropic.com/pricing](https://anthropic.com/pricing)
 
 ## If you're editing this project
 
-- The core logic lives entirely in `part1_global_settings_prompt.md` (the tracking behavior and report template).
-- The multi-session analysis logic is self-contained in `part2_multi_session_analysis_prompt.md`.
+- The core logic lives entirely in `global_prompt_token_analysis.md` (the tracking behavior and report template).
+- The multi-session analysis logic is self-contained in `multi_session_analysis_prompt.md`.
 - `token_cost_and_habits_reference.md` is a standalone reference — update pricing whenever Anthropic changes rates.
 - There is no code, no dependencies, and no build step. The whole system is prompt text and Markdown conventions.
