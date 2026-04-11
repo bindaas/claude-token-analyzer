@@ -59,7 +59,7 @@ Use this template exactly:
 | [observed habit] | [specific alternative] | [low / medium / high] |
 
 ## Session Summary (one paragraph)
-[2–4 sentences: overall efficiency, biggest cost drivers, top habit to change]
+[2–4 sentences: overall efficiency, estimated cost range for this session in USD, biggest cost drivers, top habit to change. Always include the dollar cost estimate explicitly.]
 
 ## Tags
 [3–5 tags from: #heavy-input #heavy-output #rework-loops #large-pastes #vague-prompts #precise-prompts #efficient #context-bloat #unnecessary-history #long-outputs #code-heavy #document-heavy #conversation-heavy]
