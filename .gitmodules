@@ -1,0 +1,3 @@
+[submodule ".claude/plugins/claude-global-tools"]
+	path = .claude/plugins/claude-global-tools
+	url = https://github.com/bindaas/claude-global-tools

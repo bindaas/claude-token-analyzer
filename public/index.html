@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Claude Token Analyzer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:    #0d0d0d;
+  --surf:  #161616;
+  --surf2: #1e1e1e;
+  --bdr:   #2a2a2a;
+  --bdr2:  #333;
+  --acc:   #e8ff47;
+  --acc2:  #ff6b35;
+  --acc3:  #47d4ff;
+  --acc4:  #c47aff;
+  --txt:   #e8e8e8;
+  --mut:   #666;
+  --mut2:  #444;
+  --red:   #ff4747;
+  --green: #47ff8a;
+  --yel:   #ffcc00;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:13px}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 26px;border-bottom:1px solid var(--bdr);background:var(--surf);position:sticky;top:0;z-index:100}
+.logo{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);letter-spacing:.05em}
+.logo span{color:var(--mut);font-weight:400}
+.hdr-r{display:flex;align-items:center;gap:14px}
+.hdr-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut)}
+.rbtn{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;padding:5px 13px;background:transparent;border:1px solid var(--bdr2);color:var(--mut);border-radius:2px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.rbtn:hover{border-color:var(--acc);color:var(--acc)}
+
+.shell{display:grid;grid-template-columns:196px 1fr;min-height:calc(100vh - 49px)}
+
+.sbar{background:var(--surf);border-right:1px solid var(--bdr);padding:18px 0;position:sticky;top:49px;height:calc(100vh - 49px);overflow-y:auto}
+.nav-sec{padding:0 12px;margin-bottom:18px}
+.nav-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--mut2);margin-bottom:5px;padding-left:4px}
+.nav-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:2px;cursor:pointer;font-size:12px;color:var(--mut);border:1px solid transparent;transition:all .12s}
+.nav-item:hover{background:var(--surf2);color:var(--txt)}
+.nav-item.on{background:#1a1a0d;color:var(--acc);border-color:#2a2a00}
+.ndot{width:5px;height:5px;border-radius:50%;background:var(--mut2);flex-shrink:0}
+.nav-item.on .ndot{background:var(--acc)}
+.ntag{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;padding:1px 5px;border-radius:1px;margin-left:auto}
+.tw{background:rgba(255,107,53,.12);color:var(--acc2)}
+.tn{background:rgba(232,255,71,.12);color:var(--acc)}
+
+.content{padding:22px 26px;overflow-y:auto}
+.panel{display:none}.panel.on{display:block}
+
+.pg-hdr{margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--bdr)}
+.pg-title{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--txt);margin-bottom:3px}
+.pg-sub{font-size:11px;color:var(--mut)}
+
+.kpi-row{display:grid;gap:10px;margin-bottom:14px}
+.c4{grid-template-columns:repeat(4,1fr)}.c3{grid-template-columns:repeat(3,1fr)}.c2{grid-template-columns:repeat(2,1fr)}
+.kpi{background:var(--surf);border:1px solid var(--bdr);border-radius:2px;padding:13px 15px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.ky::before{background:var(--acc)}.ko::before{background:var(--acc2)}.kb::before{background:var(--acc3)}.kp::before{background:var(--acc4)}.kg::before{background:var(--green)}.kr::before{background:var(--red)}
+.kpi-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:5px}
+.kpi-val{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:var(--txt);line-height:1}
+.kpi-sub{font-size:10px;color:var(--mut);margin-top:3px}
+
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:2px;padding:15px 17px;margin-bottom:12px}
+.card-ttl{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:10px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+
+.bar-chart{display:flex;flex-direction:column;gap:7px}
+.bar-row{display:grid;gap:8px;align-items:center;font-size:11px}
+.br3{grid-template-columns:120px 1fr 65px}.br4{grid-template-columns:120px 1fr 65px 60px}
+.blbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btrk{height:6px;background:var(--surf2);border-radius:1px;overflow:hidden}
+.bfil{height:100%;border-radius:1px;transition:width .5s}
+.bval{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt);text-align:right}
+.bval2{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut);text-align:right}
+
+.trend-wrap{position:relative;margin-bottom:6px}
+.trend-c{width:100%;display:block}
+
+.pcmp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.pcmp{background:var(--surf2);border:1px solid var(--bdr);border-radius:2px;padding:10px 12px}
+.pcmp-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:5px}
+.pcmp-row{display:flex;align-items:baseline;gap:7px}
+.pcmp-cur{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--txt)}
+.pcmp-prev{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut)}
+.pcmp-d{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;margin-top:3px}
+
+.habit{background:var(--surf2);border:1px solid var(--bdr);border-radius:2px;padding:11px 13px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start;border-left:3px solid var(--mut2);margin-bottom:7px}
+.habit.crit{border-left-color:var(--red)}.habit.warn{border-left-color:var(--yel)}.habit.info{border-left-color:var(--acc3)}
+.htt{font-weight:600;font-size:12px;color:var(--txt);margin-bottom:3px}
+.hds{font-size:11px;color:var(--mut);line-height:1.55}
+.hbdg{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:2px 7px;border-radius:1px;white-space:nowrap}
+.bdr-r{background:rgba(255,71,71,.12);color:var(--red)}.bdr-y{background:rgba(255,204,0,.12);color:var(--yel)}
+.bdr-b{background:rgba(71,212,255,.12);color:var(--acc3)}.bdr-g{background:rgba(71,255,138,.12);color:var(--green)}
+
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);text-align:left;padding:6px 9px;border-bottom:1px solid var(--bdr)}
+.tbl td{padding:6px 9px;border-bottom:1px solid var(--bdr);font-family:'IBM Plex Mono',monospace}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--surf2)}
+.tc{color:var(--acc2)}.cc{color:var(--green)}.c3{color:var(--acc3)}
+
+.donut-wrap{position:relative;width:152px;height:152px;flex-shrink:0}
+.donut-wrap canvas{width:152px;height:152px}
+.donut-ctr{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-main{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;line-height:1}
+.donut-sub{font-size:9px;color:var(--mut);margin-top:2px}
+.donut-row{display:flex;gap:16px;align-items:center}
+.leg{display:flex;flex-direction:column;gap:7px}
+.leg-i{display:flex;align-items:center;gap:7px;font-size:11px}
+.leg-d{width:8px;height:8px;border-radius:1px;flex-shrink:0}
+.leg-n{color:var(--txt);flex:1}
+.leg-v{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut)}
+
+.tips-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.tip{background:var(--surf2);border:1px solid var(--bdr);border-radius:2px;padding:12px 13px;border-top:2px solid var(--acc)}
+.tip.o{border-top-color:var(--acc2)}.tip.b{border-top-color:var(--acc3)}.tip.p{border-top-color:var(--acc4)}
+.tip-n{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:5px}
+.tip-t{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:4px}
+.tip-b{font-size:11px;color:var(--mut);line-height:1.6}
+.tip-s{margin-top:5px;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--green);font-weight:600}
+
+.tool-row{display:grid;grid-template-columns:110px 1fr 55px 60px;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--bdr)}
+.tool-row:last-child{border-bottom:none}
+.tnm{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--acc3)}
+.tct{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt);text-align:right}
+.tpc{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut);text-align:right}
+
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:var(--mut);font-family:'IBM Plex Mono',monospace;font-size:12px}
+.spin{width:12px;height:12px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-box{background:rgba(255,71,71,.07);border:1px solid rgba(255,71,71,.3);border-radius:2px;padding:14px 16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--red);margin:16px 0;line-height:1.7}
+
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+
+.up{color:var(--red)}.dn{color:var(--green)}.fl{color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">claude<span>/</span>token-analyzer</div>
+  <div class="hdr-r">
+    <div class="hdr-meta" id="hdrMeta">connecting…</div>
+    <button class="rbtn" onclick="loadData()">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="sbar">
+    <div class="nav-sec">
+      <div class="nav-lbl">Overview</div>
+      <div class="nav-item on" data-p="overview"><div class="ndot"></div>Summary</div>
+      <div class="nav-item" data-p="trend"><div class="ndot"></div>Trend <div class="ntag tn">time</div></div>
+      <div class="nav-item" data-p="projects"><div class="ndot"></div>By Project</div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">Analysis</div>
+      <div class="nav-item" data-p="habits"><div class="ndot"></div>Bad Habits <div class="ntag tw">!</div></div>
+      <div class="nav-item" data-p="tools"><div class="ndot"></div>Tool Usage</div>
+      <div class="nav-item" data-p="sessions"><div class="ndot"></div>Sessions</div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">Action</div>
+      <div class="nav-item" data-p="tips"><div class="ndot"></div>Tips</div>
+    </div>
+  </nav>
+
+  <main class="content" id="content">
+    <div class="loading"><div class="spin"></div>Loading…</div>
+  </main>
+</div>
+
+<script>
+let D = null;
+let activePanel = 'overview';
+const PRICE = { input:3, cache_write:3.75, cache_read:.30, output:15 };
+
+const $  = id => document.getElementById(id);
+const qs = s  => document.querySelector(s);
+
+function fmt(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return Math.round(n).toString();
+}
+function fmtC(c) {
+  if (c == null || isNaN(c)) return '—';
+  if (c >= 1)    return '$'+c.toFixed(2);
+  if (c >= 0.01) return '$'+c.toFixed(3);
+  return '$'+c.toFixed(4);
+}
+function fmtD(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+// ── fetch ──────────────────────────────────────────────────────────────────
+async function loadData() {
+  $('content').innerHTML = '<div class="loading"><div class="spin"></div>Reading ~/.claude/projects/…</div>';
+  try {
+    const r = await fetch('/api/data');
+    if (!r.ok) throw new Error('Server returned '+r.status);
+    D = await r.json();
+    renderAll();
+  } catch(e) {
+    $('content').innerHTML = `<div class="err-box">
+      Could not reach the server.<br><br>
+      Make sure it is running:<br>
+      &nbsp;&nbsp;node server.js<br><br>
+      Error: ${e.message}
+    </div>`;
+  }
+}
+
+// ── render everything ──────────────────────────────────────────────────────
+function renderAll() {
+  const t = D.totals;
+  const total = t.input + t.output + t.cache_write + t.cache_read;
+  $('hdrMeta').textContent =
+    `${D.sessions.length} sessions · ${fmt(total)} tokens · ${fmtC(D.totalCost)} · ${D.filesScanned} files`;
+
+  $('content').innerHTML = `
+    <div class="panel on"  id="panel-overview"></div>
+    <div class="panel"     id="panel-trend"></div>
+    <div class="panel"     id="panel-projects"></div>
+    <div class="panel"     id="panel-habits"></div>
+    <div class="panel"     id="panel-tools"></div>
+    <div class="panel"     id="panel-sessions"></div>
+    <div class="panel"     id="panel-tips"></div>
+  `;
+
+  buildOverview();
+  buildTrend();
+  buildProjects();
+  buildHabits();
+  buildTools();
+  buildSessions();
+  buildTips();
+
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('on', el.dataset.p === activePanel);
+    el.onclick = () => {
+      activePanel = el.dataset.p;
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('on'));
+      el.classList.add('on');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+      const pnl = $('panel-'+el.dataset.p);
+      if (pnl) pnl.classList.add('on');
+      if (el.dataset.p === 'trend') setTimeout(drawTrends, 40);
+    };
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  const active = $('panel-'+activePanel);
+  if (active) active.classList.add('on');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OVERVIEW
+// ─────────────────────────────────────────────────────────────────────────────
+function buildOverview() {
+  const t = D.totals;
+  const total = t.input + t.output + t.cache_write + t.cache_read;
+  const denom = t.input + t.cache_write + t.cache_read;
+  const cacheHit = denom > 0 ? (t.cache_read / denom * 100).toFixed(1) : 0;
+  const cacheSaved = (t.cache_read / 1e6) * (PRICE.input - PRICE.cache_read);
+  const first = D.sessions.length ? fmtD(D.sessions.at(-1)?.firstTs) : '—';
+  const last  = D.sessions.length ? fmtD(D.sessions[0]?.firstTs)     : '—';
+
+  const {cur, prev} = periodDiff(7);
+
+  $('panel-overview').innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Summary</div>
+      <div class="pg-sub">${D.filesScanned} JSONL files · ${D.sessions.length} sessions · ${first} – ${last}</div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <div class="card-ttl" style="margin-bottom:7px">LAST 7 DAYS vs PRIOR 7 DAYS</div>
+      <div class="pcmp-grid">
+        ${pcmpCell('Cost', cur.cost, prev.cost, fmtC, true)}
+        ${pcmpCell('Input Tokens', cur.input, prev.input, fmt, true)}
+        ${pcmpCell('Output Tokens', cur.output, prev.output, fmt, true)}
+        ${pcmpCell('Cache Reads', cur.cacheRead, prev.cacheRead, fmt, false)}
+      </div>
+    </div>
+
+    <div class="kpi-row c4">
+      <div class="kpi ky"><div class="kpi-lbl">Total Cost</div><div class="kpi-val">${fmtC(D.totalCost)}</div><div class="kpi-sub">all time</div></div>
+      <div class="kpi ko"><div class="kpi-lbl">Total Tokens</div><div class="kpi-val">${fmt(total)}</div><div class="kpi-sub">${fmt(t.input)} in · ${fmt(t.output)} out</div></div>
+      <div class="kpi kb"><div class="kpi-lbl">Cache Saved</div><div class="kpi-val">${fmtC(cacheSaved)}</div><div class="kpi-sub">${cacheHit}% cache hit</div></div>
+      <div class="kpi kp"><div class="kpi-lbl">Sessions</div><div class="kpi-val">${D.sessions.length}</div><div class="kpi-sub">${D.byProject.length} project(s)</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-ttl">Token Distribution</div>
+        <div class="donut-row">
+          <div class="donut-wrap">
+            <canvas id="donutC" width="152" height="152"></canvas>
+            <div class="donut-ctr"><div class="donut-main">${fmt(total)}</div><div class="donut-sub">total tokens</div></div>
+          </div>
+          <div class="leg" id="donutLeg"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-ttl">Cost by Type</div>
+        <div id="costTypeChart"></div>
+        <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)">
+          Output costs <strong style="color:var(--acc4)">5×</strong> more · Cache reads are <strong style="color:var(--green)">10×</strong> cheaper
+        </div>
+      </div>
+    </div>
+  `;
+
+  drawDonut('donutC', t, 'donutLeg');
+  buildCostType('costTypeChart', t);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TREND
+// ─────────────────────────────────────────────────────────────────────────────
+let trendDrawn = false;
+
+function buildTrend() {
+  const weeks = D.weeklyTrend;
+  const el = $('panel-trend');
+  if (!weeks.length) {
+    el.innerHTML = '<div class="pg-hdr"><div class="pg-title">Trend</div></div><div style="color:var(--mut);font-size:12px">Not enough data yet.</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Usage Over Time</div>
+      <div class="pg-sub">Is your usage getting better or worse?</div>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">Weekly Cost ($) — lower is better</div>
+      <div class="trend-wrap"><canvas id="tCost" class="trend-c" height="110"></canvas></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-ttl">Cache Hit % — higher is better</div>
+        <div class="trend-wrap"><canvas id="tCache" class="trend-c" height="90"></canvas></div>
+        <div style="font-size:10px;color:var(--mut);margin-top:5px">Target &gt;50% · currently ${weeks.at(-1)?.cacheHitPct||0}%</div>
+      </div>
+      <div class="card">
+        <div class="card-ttl">Output Ratio % — lower is better</div>
+        <div class="trend-wrap"><canvas id="tOut" class="trend-c" height="90"></canvas></div>
+        <div style="font-size:10px;color:var(--mut);margin-top:5px">Output costs 5× more · currently ${weeks.at(-1)?.outputRatio||0}%</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">Week-by-week table</div>
+      <table class="tbl">
+        <thead><tr>
+          <th>Week</th><th>Sessions</th><th>Input</th><th>Output</th>
+          <th>Cache Read</th><th>Cache%</th><th>Output%</th><th>Cost</th><th>Δ Cost</th>
+        </tr></thead>
+        <tbody>
+          ${[...weeks].reverse().map((w,i,a)=>{
+            const prev = a[i+1];
+            const arrow = prev
+              ? (w.cost < prev.cost ? '<span class="dn">↓</span>' : w.cost > prev.cost ? '<span class="up">↑</span>' : '<span class="fl">→</span>')
+              : '';
+            const diff = prev ? fmtC(Math.abs(w.cost - prev.cost)) : '';
+            return `<tr>
+              <td>${w.week}</td><td>${w.sessions}</td>
+              <td>${fmt(w.input)}</td><td>${fmt(w.output)}</td>
+              <td class="cc">${fmt(w.cache_read)}</td>
+              <td>${w.cacheHitPct}%</td><td>${w.outputRatio}%</td>
+              <td class="tc">${fmtC(w.cost)}</td>
+              <td>${arrow} ${diff}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function drawTrends() {
+  const weeks = D.weeklyTrend;
+  if (!weeks.length) return;
+  drawLine('tCost',  weeks, w=>w.cost,         '#e8ff47', fmtC);
+  drawLine('tCache', weeks, w=>w.cacheHitPct,  '#47d4ff', v=>v+'%');
+  drawLine('tOut',   weeks, w=>w.outputRatio,  '#c47aff', v=>v+'%');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROJECTS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildProjects() {
+  const ps = D.byProject;
+  const maxC = ps[0]?.cost || 0.001;
+  $('panel-projects').innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">By Project</div>
+      <div class="pg-sub">Token spend per project folder</div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Cost per project</div>
+      <div class="bar-chart">
+        ${ps.map(p=>`
+          <div class="bar-row br4">
+            <div class="blbl" title="${p.project}">${p.project||'(root)'}</div>
+            <div class="btrk"><div class="bfil" style="width:${(p.cost/maxC*100).toFixed(0)}%;background:var(--acc2)"></div></div>
+            <div class="bval tc">${fmtC(p.cost)}</div>
+            <div class="bval2">${p.sessions}s</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="two-col">
+      ${ps.map(p=>{
+        const tot = p.input+p.output+p.cache_write+p.cache_read;
+        const hit = tot>0?(p.cache_read/tot*100).toFixed(0):0;
+        const out = (p.input+p.output)>0?(p.output/(p.input+p.output)*100).toFixed(0):0;
+        return `<div class="card">
+          <div class="card-ttl">${p.project||'(root)'}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+            <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--acc2)">${fmtC(p.cost)}</div><div style="font-size:10px;color:var(--mut)">cost</div></div>
+            <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600">${p.sessions}</div><div style="font-size:10px;color:var(--mut)">sessions</div></div>
+            <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--acc3)">${hit}%</div><div style="font-size:10px;color:var(--mut)">cache hit</div></div>
+            <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--acc4)">${out}%</div><div style="font-size:10px;color:var(--mut)">out ratio</div></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HABITS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildHabits() {
+  const t = D.totals;
+  const sessions = D.sessions;
+  const weeks = D.weeklyTrend;
+
+  const avgIn = sessions.length>0 ? sessions.reduce((a,s)=>a+s.inputTokens,0)/sessions.length : 0;
+  const totalReads = (D.toolCounts['Read']||0)+(D.toolCounts['View']||0);
+  const denom = t.input+t.cache_write+t.cache_read;
+  const cacheHit = denom>0 ? t.cache_read/denom : 0;
+  const outRatio = (t.input+t.output)>0 ? t.output/(t.input+t.output) : 0;
+  const errReads = D.largeReads.filter(r=>r.error).length;
+  const bash = D.toolCounts['Bash']||0;
+
+  const habits = [];
+
+  // Trend direction
+  if (weeks.length >= 3) {
+    const r = weeks.slice(-3).map(w=>w.cost);
+    if (r[2]>r[1] && r[1]>r[0])
+      habits.push({sev:'crit',t:'Cost Trending Up 3 Weeks Running',
+        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Costs are rising. Check the Trend panel to see which week spiked.`,
+        b:'↑ rising',bc:'bdr-r'});
+    else if (r[2]<r[1] && r[1]<r[0])
+      habits.push({sev:'info',t:'Cost Trending Down ✓',
+        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Your habits are improving.`,
+        b:'↓ falling',bc:'bdr-g'});
+  }
+
+  if (avgIn > 20000)
+    habits.push({sev:'crit',t:'Very Large Context Windows',
+      d:`Average session input: ${fmt(avgIn)} tokens. Every turn re-sends all prior messages. Cost grows with conversation length. Start fresh sessions per task; use /clear to reset mid-session.`,
+      b:`${fmt(avgIn)} avg input`,bc:'bdr-r'});
+  else if (avgIn > 8000)
+    habits.push({sev:'warn',t:'Growing Context Windows',
+      d:`Average session input: ${fmt(avgIn)} tokens. Break long work into focused sub-sessions to contain context bloat.`,
+      b:`${fmt(avgIn)} avg input`,bc:'bdr-y'});
+
+  if (totalReads > 20)
+    habits.push({sev:'crit',t:'Excessive File Reading',
+      d:`${totalReads} Read/View calls. Each read injects file content into context. Use offset+limit to read only what's needed. Ask Claude to search/grep before reading entire files.`,
+      b:`${totalReads} reads`,bc:'bdr-r'});
+  else if (totalReads > 5)
+    habits.push({sev:'warn',t:'Frequent File Reading',
+      d:`${totalReads} file reads. Check for re-reading files already in context, or reading whole files when a section suffices.`,
+      b:`${totalReads} reads`,bc:'bdr-y'});
+
+  if (errReads > 0)
+    habits.push({sev:'crit',t:'Files Hit Token Limit',
+      d:`${errReads} read(s) exceeded the file token cap — Claude paid for context then retried, doubling cost. Always pass offset+limit for large files.`,
+      b:`${errReads} failed reads`,bc:'bdr-r'});
+
+  if (cacheHit >= 0.5)
+    habits.push({sev:'info',t:'Good Cache Utilization ✓',
+      d:`${(cacheHit*100).toFixed(0)}% of input came from cache (10× cheaper than full input). Keep sessions focused.`,
+      b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-g'});
+  else
+    habits.push({sev:'warn',t:'Low Cache Hit Rate',
+      d:`Only ${(cacheHit*100).toFixed(0)}% cache hits. Cache tokens cost 10× less. More focused sessions + stable CLAUDE.md improve this.`,
+      b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-y'});
+
+  if (outRatio > 0.25)
+    habits.push({sev:'warn',t:'High Output Token Ratio',
+      d:`Output is ${(outRatio*100).toFixed(0)}% of your spend. Output costs 5× more than input. Use "be concise" / "just the code" / "no explanation" in prompts. Add this globally to CLAUDE.md.`,
+      b:`${(outRatio*100).toFixed(0)}% output`,bc:'bdr-y'});
+
+  if (bash > 30)
+    habits.push({sev:'warn',t:'High Bash Tool Usage',
+      d:`${bash} Bash calls. Chain commands in one call ("cd x && ls && cat file") instead of separate turns to cut context accumulation.`,
+      b:`${bash} bash calls`,bc:'bdr-y'});
+
+  if (!habits.length)
+    habits.push({sev:'info',t:'No Major Issues Found',d:'Load more sessions for a complete picture.',b:'all clear',bc:'bdr-b'});
+
+  $('panel-habits').innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Bad Habits Detected</div>
+      <div class="pg-sub">Patterns in your usage that inflate cost</div>
+    </div>
+    ${habits.map(h=>`
+      <div class="habit ${h.sev}">
+        <div><div class="htt">${h.t}</div><div class="hds">${h.d}</div></div>
+        <div class="hbdg ${h.bc}">${h.b}</div>
+      </div>`).join('')}
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOOLS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildTools() {
+  const tc = D.toolCounts;
+  const sorted = Object.entries(tc).sort((a,b)=>b[1]-a[1]);
+  const total = sorted.reduce((a,[,v])=>a+v, 0);
+  const maxCt = sorted[0]?.[1] || 1;
+
+  $('panel-tools').innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Tool Usage</div>
+      <div class="pg-sub">Every tool result adds tokens to context</div>
+    </div>
+    <div class="kpi-row c3">
+      <div class="kpi kb"><div class="kpi-lbl">Total Calls</div><div class="kpi-val">${total}</div><div class="kpi-sub">across all sessions</div></div>
+      <div class="kpi ky"><div class="kpi-lbl">Most Used</div><div class="kpi-val" style="font-size:13px">${sorted[0]?.[0]||'—'}</div><div class="kpi-sub">${sorted[0]?.[1]||0} calls</div></div>
+      <div class="kpi kr"><div class="kpi-lbl">Large Reads</div><div class="kpi-val">${D.largeReads.length}</div><div class="kpi-sub">50+ line reads</div></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">All tools</div>
+      <div class="tool-row" style="padding-bottom:3px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2)">Tool</div>
+        <div></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;text-transform:uppercase;text-align:right;color:var(--mut2)">Calls</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;text-transform:uppercase;text-align:right;color:var(--mut2)">%</div>
+      </div>
+      ${sorted.map(([name,ct])=>`
+        <div class="tool-row">
+          <div class="tnm">${name}</div>
+          <div class="btrk" style="height:5px"><div class="bfil" style="width:${(ct/maxCt*100).toFixed(0)}%;background:var(--acc3)"></div></div>
+          <div class="tct">${ct}</div>
+          <div class="tpc">${(ct/total*100).toFixed(1)}%</div>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-ttl">Large file reads</div>
+      ${D.largeReads.length === 0
+        ? '<div style="color:var(--mut);font-size:11px">None detected — good!</div>'
+        : `<table class="tbl"><thead><tr><th>File</th><th>Lines</th><th>Total</th><th>Status</th></tr></thead><tbody>
+          ${D.largeReads.slice(0,15).map(r=>`<tr>
+            <td style="max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.file.split('/').slice(-3).join('/')}</td>
+            <td class="${r.error?'tc':''}">${r.lines}</td>
+            <td>${r.totalLines||'?'}</td>
+            <td>${r.error?'<span style="color:var(--red)">LIMIT EXCEEDED</span>':'<span style="color:var(--yel)">Large</span>'}</td>
+          </tr>`).join('')}
+          </tbody></table>`}
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SESSIONS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildSessions() {
+  $('panel-sessions').innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Sessions</div>
+      <div class="pg-sub">Most recent first · ${D.sessions.length} total</div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr>
+          <th>Date</th><th>Project</th><th>ID</th>
+          <th>Prompts</th><th>Input</th><th>Output</th><th>Cache Rd</th><th>Cost</th><th>Via</th>
+        </tr></thead>
+        <tbody>
+          ${D.sessions.map(s=>`<tr>
+            <td>${fmtD(s.firstTs)}</td>
+            <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--acc3)">${s.project}</td>
+            <td style="color:var(--mut)">${s.id.slice(0,8)}…</td>
+            <td>${s.prompts}</td>
+            <td>${fmt(s.inputTokens)}</td>
+            <td>${fmt(s.outputTokens)}</td>
+            <td class="cc">${fmt(s.cacheRead)}</td>
+            <td class="tc">${fmtC(s.cost)}</td>
+            <td style="color:var(--mut)">${s.entrypoint||'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TIPS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildTips() {
+  const t = D.totals;
+  const outR = (t.input+t.output)>0 ? t.output/(t.input+t.output) : 0;
+  const reads = (D.toolCounts['Read']||0)+(D.toolCounts['View']||0);
+
+  const tips = [
+    {n:'01',c:'',t:'Ask for concise responses',
+      b:'Output tokens cost 5× more. Prefix prompts with "be concise", "just the code", or "no explanation needed". Add a global brevity rule to your CLAUDE.md.',
+      s:`~${Math.min((outR*.5*100).toFixed(0),40)}% output cost`},
+    {n:'02',c:'o',t:'Use offset+limit for large files',
+      b:'Reading a 900-line file costs ~9× more than reading lines 1–100. Pass offset and limit. Ask Claude to grep/search first to find the exact section it needs.',
+      s:reads>10?'~20% from read savings':'Important as files grow'},
+    {n:'03',c:'b',t:'Batch Bash commands',
+      b:'"ls && cat file && git status" in one call vs three separate turns. Each turn re-sends the full growing context. Batching reduces both turn count and accumulation.',
+      s:'Fewer high-cost turns'},
+    {n:'04',c:'p',t:'CLAUDE.md for persistent context',
+      b:'Standards, patterns, and constraints in CLAUDE.md get written to cache once and reused at 10¢/M instead of $3/M — a 10× discount on stable context across every session.',
+      s:'~10× cheaper on static context'},
+    {n:'05',c:'',t:'Use /clear between sub-tasks',
+      b:'/clear resets conversation history while keeping CLAUDE.md in cache. Use it after finishing a task so the next one does not pay for all prior context.',
+      s:'Stops context bloat mid-session'},
+    {n:'06',c:'o',t:'Bundle UI feedback into one prompt',
+      b:'Instead of 6 separate "make button smaller", "change this color" messages — list all changes in one prompt. Each turn bills the entire context window again.',
+      s:'Dramatically fewer turns'},
+    {n:'07',c:'b',t:'Disable extended thinking for simple tasks',
+      b:'Thinking blocks are billed at output rates ($15/M). Only enable for hard reasoning. For UI tweaks, file edits, and routine coding it is overkill.',
+      s:'Up to 50% on affected turns'},
+    {n:'08',c:'p',t:'Do not re-read files already in context',
+      b:'If Claude read a file this session, refer to it by name. Only re-read after you change it. Redundant reads are pure waste — the content is already there.',
+      s:'Eliminates redundant injection'},
+  ];
+
+  $('panel-tips').innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">How to Reduce Cost</div>
+      <div class="pg-sub">Based on your usage patterns · ${fmtC(D.totalCost)} total so far</div>
+    </div>
+    <div class="tips-grid">
+      ${tips.map(tp=>`
+        <div class="tip ${tp.c}">
+          <div class="tip-n">TIP ${tp.n}</div>
+          <div class="tip-t">${tp.t}</div>
+          <div class="tip-b">${tp.b}</div>
+          <div class="tip-s">⬇ ${tp.s}</div>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PERIOD COMPARISON
+// ─────────────────────────────────────────────────────────────────────────────
+function periodDiff(days) {
+  const now  = Date.now();
+  const ms   = days * 86400000;
+  const cutA = now - ms;
+  const cutB = now - 2*ms;
+  function sum(from, to) {
+    return D.sessions
+      .filter(s => s.firstTs && new Date(s.firstTs) >= new Date(from) && new Date(s.firstTs) < new Date(to))
+      .reduce((a,x) => ({
+        cost:     a.cost+x.cost,
+        input:    a.input+x.inputTokens,
+        output:   a.output+x.outputTokens,
+        cacheRead:a.cacheRead+x.cacheRead,
+      }), {cost:0,input:0,output:0,cacheRead:0});
+  }
+  return { cur: sum(cutA, now), prev: sum(cutB, cutA) };
+}
+
+function pcmpCell(lbl, cur, prev, fmtFn, badUp) {
+  const d   = cur - prev;
+  const pct = prev > 0 ? Math.abs(d/prev*100).toFixed(0)+'%' : null;
+  const up  = d > 0;
+  const cls = up === badUp ? 'up' : 'dn';
+  const arrow = pct ? `<div class="pcmp-d ${cls}">${up?'↑':'↓'} ${pct}</div>` : '';
+  return `<div class="pcmp">
+    <div class="pcmp-lbl">${lbl}</div>
+    <div class="pcmp-row">
+      <div class="pcmp-cur">${fmtFn(cur)}</div>
+      <div class="pcmp-prev">prev ${fmtFn(prev)}</div>
+    </div>${arrow}
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CANVAS HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function drawDonut(id, t, legId) {
+  const canvas = $(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W=152, H=152;
+  canvas.width=W; canvas.height=H;
+  const total = t.input+t.output+t.cache_write+t.cache_read;
+  if (!total) return;
+  const segs = [
+    {label:'Input',       value:t.input,       color:'#e8ff47'},
+    {label:'Cache Write', value:t.cache_write,  color:'#ff6b35'},
+    {label:'Cache Read',  value:t.cache_read,   color:'#47d4ff'},
+    {label:'Output',      value:t.output,       color:'#c47aff'},
+  ];
+  let start = -Math.PI/2;
+  const cx=W/2, cy=H/2, r=64, ir=42;
+  for (const s of segs) {
+    if (!s.value) continue;
+    const angle = (s.value/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+angle); ctx.closePath();
+    ctx.fillStyle=s.color; ctx.fill();
+    start += angle;
+  }
+  ctx.beginPath(); ctx.arc(cx,cy,ir,0,Math.PI*2);
+  ctx.fillStyle='#161616'; ctx.fill();
+  if (legId) {
+    $(legId).innerHTML = segs.map(s=>`
+      <div class="leg-i">
+        <div class="leg-d" style="background:${s.color}"></div>
+        <div class="leg-n">${s.label}</div>
+        <div class="leg-v">${fmt(s.value)} (${total?(s.value/total*100).toFixed(0):0}%)</div>
+      </div>`).join('');
+  }
+}
+
+function buildCostType(id, t) {
+  const rows = [
+    {label:'Output',      cost:(t.output/1e6)*PRICE.output,           color:'var(--acc4)'},
+    {label:'Input',       cost:(t.input/1e6)*PRICE.input,             color:'var(--acc)'},
+    {label:'Cache Write', cost:(t.cache_write/1e6)*PRICE.cache_write,  color:'var(--acc2)'},
+    {label:'Cache Read',  cost:(t.cache_read/1e6)*PRICE.cache_read,    color:'var(--acc3)'},
+  ].sort((a,b)=>b.cost-a.cost);
+  const max = rows[0].cost || 0.001;
+  $(id).innerHTML = `<div class="bar-chart">${rows.map(r=>`
+    <div class="bar-row br3">
+      <div class="blbl">${r.label}</div>
+      <div class="btrk"><div class="bfil" style="width:${(r.cost/max*100).toFixed(0)}%;background:${r.color}"></div></div>
+      <div class="bval">${fmtC(r.cost)}</div>
+    </div>`).join('')}</div>`;
+}
+
+function drawLine(id, weeks, acc, color, labelFmt) {
+  const canvas = $(id);
+  if (!canvas) return;
+  const W = canvas.parentElement.clientWidth || 580;
+  const H = parseInt(canvas.getAttribute('height')) || 110;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const vals = weeks.map(acc);
+  const min  = Math.min(...vals) * 0.85;
+  const maxV = Math.max(...vals) * 1.15 || 1;
+  const pad  = {t:14, r:10, b:24, l:46};
+  const cw   = W - pad.l - pad.r;
+  const ch   = H - pad.t - pad.b;
+
+  // Grid
+  ctx.strokeStyle = '#252525'; ctx.lineWidth = 1;
+  [0, .5, 1].forEach(f => {
+    const y = pad.t + ch*(1-f);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke();
+    ctx.fillStyle='#555'; ctx.font='9px "IBM Plex Mono",monospace';
+    ctx.textAlign='right';
+    ctx.fillText(labelFmt(min+(maxV-min)*f), pad.l-4, y+3);
+  });
+
+  if (weeks.length < 2) return;
+
+  // Area fill
+  ctx.save(); ctx.globalAlpha=0.09; ctx.fillStyle=color;
+  ctx.beginPath();
+  weeks.forEach((w,i) => {
+    const x = pad.l + (i/(weeks.length-1))*cw;
+    const y = pad.t + ch*(1-(vals[i]-min)/(maxV-min));
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad.l+cw, pad.t+ch);
+  ctx.lineTo(pad.l, pad.t+ch);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+
+  // Line
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineJoin='round';
+  ctx.beginPath();
+  weeks.forEach((w,i) => {
+    const x = pad.l + (i/(weeks.length-1))*cw;
+    const y = pad.t + ch*(1-(vals[i]-min)/(maxV-min));
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Dots + x-labels
+  weeks.forEach((w,i) => {
+    const x = pad.l + (i/(weeks.length-1))*cw;
+    const y = pad.t + ch*(1-(vals[i]-min)/(maxV-min));
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fillStyle=color; ctx.fill();
+    if (weeks.length <= 10 || i%2===0) {
+      ctx.fillStyle='#555'; ctx.font='8px "IBM Plex Mono",monospace';
+      ctx.textAlign='center';
+      ctx.fillText(w.week.slice(5), x, H-5);
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOT — redraw canvases when Trend panel becomes visible
+// ─────────────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.onclick = () => {
+    if (!D) return;
+    activePanel = el.dataset.p;
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('on'));
+    el.classList.add('on');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+    const pnl = $('panel-'+el.dataset.p);
+    if (pnl) pnl.classList.add('on');
+    if (el.dataset.p === 'trend') setTimeout(drawTrends, 40);
+  };
+});
+
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Claude Token Analyzer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --border2: #333;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --accent3: #47d4ff;
+    --accent4: #c47aff;
+    --text: #e8e8e8;
+    --muted: #666;
+    --muted2: #444;
+    --red: #ff4747;
+    --green: #47ff8a;
+    --yellow: #ffcc00;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  .logo span { color: var(--muted); font-weight: 400; }
+
+  .header-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 61px);
+    padding: 40px;
+    gap: 24px;
+  }
+
+  .upload-card {
+    background: var(--surface);
+    border: 1px dashed var(--border2);
+    border-radius: 4px;
+    padding: 60px 80px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 560px;
+    width: 100%;
+  }
+
+  .upload-card:hover, .upload-card.dragover {
+    border-color: var(--accent);
+    background: #1a1a0d;
+  }
+
+  .upload-icon {
+    font-size: 36px;
+    margin-bottom: 16px;
+  }
+
+  .upload-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .upload-sub {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .upload-sub code {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent3);
+    font-size: 11px;
+  }
+
+  .file-input { display: none; }
+
+  .upload-btn {
+    margin-top: 20px;
+    padding: 10px 28px;
+    background: var(--accent);
+    color: #0d0d0d;
+    border: none;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: opacity 0.15s;
+  }
+
+  .upload-btn:hover { opacity: 0.85; }
+
+  .path-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: 2px;
+    max-width: 560px;
+    width: 100%;
+  }
+
+  .path-hint strong { color: var(--accent3); }
+
+  /* DASHBOARD */
+  .dashboard { display: none; }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 61px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 61px;
+    height: calc(100vh - 61px);
+    overflow-y: auto;
+  }
+
+  .nav-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+
+  .nav-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted2);
+    margin-bottom: 8px;
+    padding-left: 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 12px;
+    color: var(--muted);
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: #1a1a0d;
+    color: var(--accent);
+    border-color: #333300;
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted2);
+    flex-shrink: 0;
+  }
+  .nav-item.active .nav-dot { background: var(--accent); }
+
+  /* CONTENT */
+  .content {
+    padding: 28px 32px;
+    overflow-y: auto;
+  }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* KPI ROW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi-card.yellow::before { background: var(--accent); }
+  .kpi-card.orange::before { background: var(--accent2); }
+  .kpi-card.blue::before { background: var(--accent3); }
+  .kpi-card.purple::before { background: var(--accent4); }
+
+  .kpi-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* SECTION HEADERS */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text);
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* CHARTS */
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 80px;
+    gap: 10px;
+    align-items: center;
+    font-size: 11px;
+  }
+
+  .bar-label {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bar-track {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 0.6s ease;
+  }
+
+  .bar-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text);
+    text-align: right;
+  }
+
+  /* TIMELINE */
+  .timeline-chart {
+    position: relative;
+    height: 160px;
+    margin-top: 8px;
+  }
+
+  .timeline-canvas { width: 100%; height: 100%; }
+
+  /* HABITS TABLE */
+  .habits-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .habit-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: start;
+    border-left: 3px solid var(--muted2);
+    transition: border-color 0.2s;
+  }
+
+  .habit-item.critical { border-left-color: var(--red); }
+  .habit-item.warning { border-left-color: var(--yellow); }
+  .habit-item.info { border-left-color: var(--accent3); }
+
+  .habit-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .habit-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .habit-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .badge-red { background: rgba(255,71,71,0.15); color: var(--red); }
+  .badge-yellow { background: rgba(255,204,0,0.15); color: var(--yellow); }
+  .badge-blue { background: rgba(71,212,255,0.15); color: var(--accent3); }
+
+  /* SESSIONS TABLE */
+  .sessions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .sessions-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sessions-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .sessions-table tr:hover td { background: var(--surface2); }
+
+  .cost-cell { color: var(--accent2); font-weight: 600; }
+  .cache-cell { color: var(--green); }
+
+  /* TIPS */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .tip-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 14px 16px;
+    border-top: 2px solid var(--accent);
+  }
+
+  .tip-card.orange { border-top-color: var(--accent2); }
+  .tip-card.blue { border-top-color: var(--accent3); }
+  .tip-card.purple { border-top-color: var(--accent4); }
+
+  .tip-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .tip-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .tip-body {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .tip-saving {
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* TOKEN FLOW */
+  .token-flow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  .flow-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .flow-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .flow-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .flow-pct {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* DONUT */
+  .donut-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .donut-wrap {
+    position: relative;
+    width: 180px;
+    height: 180px;
+  }
+
+  .donut-wrap canvas { width: 180px; height: 180px; }
+
+  .donut-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .donut-main {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .donut-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .legend { display: flex; flex-direction: column; gap: 10px; }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .legend-name { color: var(--text); flex: 1; }
+
+  .legend-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* TOOL ANALYSIS */
+  .tool-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 70px 90px;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tool-row:last-child { border-bottom: none; }
+
+  .tool-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent3);
+  }
+
+  .tool-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    text-align: right;
+  }
+
+  .tool-cost {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    text-align: right;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .page-sub { font-size: 12px; color: var(--muted); }
+
+  /* TWO COL */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* STATUS */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .tag-new { background: rgba(232,255,71,0.12); color: var(--accent); }
+  .tag-warn { background: rgba(255,107,53,0.12); color: var(--accent2); }
+
+  /* MULTI-FILE status */
+  .file-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .file-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 2px;
+    padding: 3px 10px;
+    color: var(--accent3);
+  }
+
+  .file-pill.loaded { border-color: var(--green); color: var(--green); }
+  .file-pill.error { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">claude<span>/</span>token-analyzer</div>
+  <div class="header-meta" id="headerMeta">no data loaded</div>
+</header>
+
+<!-- UPLOAD ZONE -->
+<div class="upload-zone" id="uploadZone">
+  <div class="upload-card" id="dropZone">
+    <div class="upload-icon">📂</div>
+    <div class="upload-title">Drop JSONL files here</div>
+    <div class="upload-sub">
+      From <code>~/.claude/projects/**/*.jsonl</code><br/>
+      Supports multiple files at once
+    </div>
+    <input type="file" class="file-input" id="fileInput" accept=".jsonl" multiple/>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Select Files</button>
+    <div class="file-pills" id="filePills"></div>
+  </div>
+
+  <div class="path-hint">
+    <strong>Tip:</strong> Find your files at<br/>
+    <code>~/.claude/projects/&lt;project&gt;/*.jsonl</code>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="main-layout">
+    <nav class="sidebar">
+      <div class="nav-section">
+        <div class="nav-label">Overview</div>
+        <div class="nav-item active" data-panel="overview">
+          <div class="nav-dot"></div> Summary
+        </div>
+        <div class="nav-item" data-panel="cost">
+          <div class="nav-dot"></div> Cost Breakdown
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Analysis</div>
+        <div class="nav-item" data-panel="habits">
+          <div class="nav-dot"></div> Bad Habits <span class="tag tag-warn">!</span>
+        </div>
+        <div class="nav-item" data-panel="tools">
+          <div class="nav-dot"></div> Tool Usage
+        </div>
+        <div class="nav-item" data-panel="sessions">
+          <div class="nav-dot"></div> Sessions
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Action</div>
+        <div class="nav-item" data-panel="tips">
+          <div class="nav-dot"></div> Reduction Tips <span class="tag tag-new">new</span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="content">
+
+      <!-- OVERVIEW PANEL -->
+      <div class="panel active" id="panel-overview">
+        <div class="page-header">
+          <div class="page-title">Session Overview</div>
+          <div class="page-sub" id="overviewSub">Loading...</div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card yellow">
+            <div class="kpi-label">Total Cost</div>
+            <div class="kpi-value" id="kpiCost">—</div>
+            <div class="kpi-sub" id="kpiCostSub">estimated</div>
+          </div>
+          <div class="kpi-card orange">
+            <div class="kpi-label">Total Tokens</div>
+            <div class="kpi-value" id="kpiTokens">—</div>
+            <div class="kpi-sub" id="kpiTokensSub">input + output</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">Cache Savings</div>
+            <div class="kpi-value" id="kpiCache">—</div>
+            <div class="kpi-sub" id="kpiCacheSub">tokens reused</div>
+          </div>
+          <div class="kpi-card purple">
+            <div class="kpi-label">API Calls</div>
+            <div class="kpi-value" id="kpiCalls">—</div>
+            <div class="kpi-sub" id="kpiCallsSub">messages</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Token Distribution</div>
+            <div class="donut-row">
+              <div class="donut-wrap">
+                <canvas id="donutCanvas" width="180" height="180"></canvas>
+                <div class="donut-center">
+                  <div class="donut-main" id="donutMain">—</div>
+                  <div class="donut-sub">total tokens</div>
+                </div>
+              </div>
+              <div class="legend" id="tokenLegend"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Cache Effectiveness</div>
+            <div class="token-flow" id="tokenFlow"></div>
+            <div style="margin-top: 14px;" id="cacheBar"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Token Usage by Prompt (Top 10)</div>
+          <div class="bar-chart" id="promptsChart"></div>
+        </div>
+      </div>
+
+      <!-- COST PANEL -->
+      <div class="panel" id="panel-cost">
+        <div class="page-header">
+          <div class="page-title">Cost Breakdown</div>
+          <div class="page-sub">Based on claude-sonnet-4 pricing (approximate)</div>
+        </div>
+
+        <div class="kpi-row" id="costKpis"></div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Cost by Token Type</div>
+            <div id="costByType"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Sessions by Cost (Top 10)</div>
+            <div class="bar-chart" id="costBySession"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">What You're Paying For</div>
+          <div id="costBreakdownTable"></div>
+        </div>
+      </div>
+
+      <!-- HABITS PANEL -->
+      <div class="panel" id="panel-habits">
+        <div class="page-header">
+          <div class="page-title">Bad Habits Detected</div>
+          <div class="page-sub">Patterns in your usage that inflate token costs</div>
+        </div>
+
+        <div class="habits-grid" id="habitsGrid"></div>
+      </div>
+
+      <!-- TOOLS PANEL -->
+      <div class="panel" id="panel-tools">
+        <div class="page-header">
+          <div class="page-title">Tool Usage Analysis</div>
+          <div class="page-sub">Every tool call burns input tokens for the result</div>
+        </div>
+
+        <div class="kpi-row" id="toolKpis"></div>
+
+        <div class="card">
+          <div class="card-title">Tool Calls Ranked by Frequency</div>
+          <div id="toolTable"></div>
+        </div>
+
+        <div class="card" style="margin-top: 0;">
+          <div class="card-title">Large File Reads</div>
+          <div id="largeReads"></div>
+        </div>
+      </div>
+
+      <!-- SESSIONS PANEL -->
+      <div class="panel" id="panel-sessions">
+        <div class="page-header">
+          <div class="page-title">Session Analysis</div>
+          <div class="page-sub">Token usage per conversation session</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">All Sessions</div>
+          <table class="sessions-table">
+            <thead>
+              <tr>
+                <th>Session</th>
+                <th>Prompts</th>
+                <th>Input Tokens</th>
+                <th>Output Tokens</th>
+                <th>Cache Read</th>
+                <th>Est. Cost</th>
+                <th>Avg Input/Turn</th>
+              </tr>
+            </thead>
+            <tbody id="sessionsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TIPS PANEL -->
+      <div class="panel" id="panel-tips">
+        <div class="page-header">
+          <div class="page-title">How to Reduce Your Token Costs</div>
+          <div class="page-sub" id="tipsSub">Personalized to your usage patterns</div>
+        </div>
+
+        <div class="tips-grid" id="tipsGrid"></div>
+
+        <div class="card" style="margin-top: 16px;">
+          <div class="card-title">General Best Practices</div>
+          <div class="habits-grid" id="generalTips"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PRICING (per 1M tokens) — claude-sonnet-4.6 approximate
+// ============================================================
+const PRICE = {
+  input: 3.00,
+  cache_write: 3.75,
+  cache_read: 0.30,
+  output: 15.00,
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  sessions: {},       // sessionId -> { prompts, messages, toolCalls, usage }
+  allMessages: [],
+  totalUsage: {
+    input: 0, cache_write: 0, cache_read: 0, output: 0
+  },
+  toolCalls: [],      // { name, sessionId, timestamp }
+  largeReads: [],     // { file, tokens, sessionId }
+  prompts: [],        // { text, inputTokens, sessionId, timestamp }
+};
+
+// ============================================================
+// PARSING
+// ============================================================
+function parseLines(text, filename) {
+  const lines = text.split('\n').filter(l => l.trim());
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line);
+      processEntry(obj, filename);
+    } catch(e) {}
+  }
+}
+
+function processEntry(obj, filename) {
+  const sid = obj.sessionId;
+
+  if (!sid) return;
+
+  if (!state.sessions[sid]) {
+    state.sessions[sid] = {
+      id: sid,
+      filename,
+      prompts: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheWrite: 0,
+      cacheRead: 0,
+      toolCalls: 0,
+      firstTs: null,
+      lastTs: null,
+      project: filename,
+    };
+  }
+  const sess = state.sessions[sid];
+
+  // Track timestamps
+  if (obj.timestamp) {
+    const ts = new Date(obj.timestamp);
+    if (!sess.firstTs || ts < sess.firstTs) sess.firstTs = ts;
+    if (!sess.lastTs || ts > sess.lastTs) sess.lastTs = ts;
+  }
+
+  // Assistant messages with usage
+  if (obj.type === 'assistant' && obj.message?.usage) {
+    const u = obj.message.usage;
+    const ic = u.input_tokens || 0;
+    const oc = u.output_tokens || 0;
+    const cw = u.cache_creation_input_tokens || 0;
+    const cr = u.cache_read_input_tokens || 0;
+
+    sess.inputTokens += ic;
+    sess.outputTokens += oc;
+    sess.cacheWrite += cw;
+    sess.cacheRead += cr;
+
+    state.totalUsage.input += ic;
+    state.totalUsage.output += oc;
+    state.totalUsage.cache_write += cw;
+    state.totalUsage.cache_read += cr;
+
+    // Extract tool calls from this message
+    if (obj.message.content) {
+      for (const block of obj.message.content) {
+        if (block.type === 'tool_use') {
+          sess.toolCalls++;
+          state.toolCalls.push({
+            name: block.name,
+            sessionId: sid,
+            timestamp: obj.timestamp,
+            input: block.input,
+          });
+
+          // Detect large file reads
+          if (['Read', 'View'].includes(block.name) && block.input?.file_path) {
+            // Will check the tool result for token size
+          }
+        }
+      }
+    }
+  }
+
+  // User messages (tool results) — detect large file reads
+  if (obj.type === 'user' && obj.toolUseResult) {
+    const res = obj.toolUseResult;
+    if (res?.type === 'text' && res?.file?.numLines) {
+      const numLines = res.file.numLines;
+      const totalLines = res.file.totalLines;
+      const filePath = res.file.filePath;
+      if (numLines > 50) {
+        state.largeReads.push({
+          file: filePath || '?',
+          lines: numLines,
+          totalLines,
+          sessionId: sid,
+          timestamp: obj.timestamp,
+        });
+      }
+    }
+    // Check for error tool results (failed reads)
+    if (typeof res === 'string' && res.includes('exceeds maximum')) {
+      state.largeReads.push({
+        file: 'EXCEEDED LIMIT',
+        lines: 10000,
+        totalLines: 16000,
+        sessionId: sid,
+        timestamp: obj.timestamp,
+        error: true,
+      });
+    }
+  }
+
+  // User prompts (non-meta, non-tool-result)
+  if (obj.type === 'user' && obj.promptId && obj.message?.content) {
+    const content = obj.message.content;
+    let text = '';
+    if (typeof content === 'string') {
+      text = content;
+    } else if (Array.isArray(content)) {
+      text = content.filter(b => b.type === 'text').map(b => b.text).join(' ');
+    }
+    if (text && text.length > 10 && !text.startsWith('<bash') && !text.startsWith('<local')) {
+      sess.prompts++;
+      state.prompts.push({
+        text: text.slice(0, 200),
+        sessionId: sid,
+        timestamp: obj.timestamp,
+        // We'll correlate token usage by proximity — approximate
+      });
+    }
+  }
+}
+
+function calcCost(sess) {
+  return (
+    (sess.inputTokens / 1e6) * PRICE.input +
+    (sess.outputTokens / 1e6) * PRICE.output +
+    (sess.cacheWrite / 1e6) * PRICE.cache_write +
+    (sess.cacheRead / 1e6) * PRICE.cache_read
+  );
+}
+
+function calcTotalCost() {
+  const u = state.totalUsage;
+  return (
+    (u.input / 1e6) * PRICE.input +
+    (u.output / 1e6) * PRICE.output +
+    (u.cache_write / 1e6) * PRICE.cache_write +
+    (u.cache_read / 1e6) * PRICE.cache_read
+  );
+}
+
+function fmt(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toString();
+}
+
+function fmtCost(c) {
+  if (c >= 1) return '$' + c.toFixed(2);
+  return '$' + c.toFixed(4);
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  const sessions = Object.values(state.sessions);
+  const totalCost = calcTotalCost();
+  const u = state.totalUsage;
+  const totalTokens = u.input + u.output + u.cache_write + u.cache_read;
+
+  // Header meta
+  document.getElementById('headerMeta').textContent =
+    `${sessions.length} session(s) · ${fmt(totalTokens)} tokens · ${fmtCost(totalCost)}`;
+
+  // Overview sub
+  const earliest = sessions.reduce((a,s) => s.firstTs && (!a || s.firstTs < a) ? s.firstTs : a, null);
+  const latest = sessions.reduce((a,s) => s.lastTs && (!a || s.lastTs > a) ? s.lastTs : a, null);
+  document.getElementById('overviewSub').textContent =
+    earliest ? `${earliest.toLocaleDateString()} — ${latest.toLocaleDateString()} · ${sessions.length} sessions` : '';
+
+  // KPIs
+  const cacheHitRate = totalTokens > 0 ? ((u.cache_read / totalTokens) * 100).toFixed(1) : '0';
+  document.getElementById('kpiCost').textContent = fmtCost(totalCost);
+  document.getElementById('kpiCostSub').textContent = 'claude-sonnet-4.6 rates';
+  document.getElementById('kpiTokens').textContent = fmt(u.input + u.output + u.cache_write);
+  document.getElementById('kpiTokensSub').textContent = `${fmt(u.input)} in · ${fmt(u.output)} out`;
+  document.getElementById('kpiCache').textContent = fmt(u.cache_read);
+  document.getElementById('kpiCacheSub').textContent = `${cacheHitRate}% cache hit rate`;
+  document.getElementById('kpiCalls').textContent = sessions.reduce((a,s) => a + s.toolCalls, 0) + sessions.reduce((a,s) => a + s.prompts, 0);
+  document.getElementById('kpiCallsSub').textContent = `${state.toolCalls.length} tool calls`;
+
+  renderDonut();
+  renderCacheFlow();
+  renderPromptsChart();
+  renderCostPanel();
+  renderHabits();
+  renderTools();
+  renderSessions();
+  renderTips();
+}
+
+function renderDonut() {
+  const u = state.totalUsage;
+  const total = u.input + u.output + u.cache_write + u.cache_read;
+  const canvas = document.getElementById('donutCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = 180, H = 180;
+  canvas.width = W; canvas.height = H;
+
+  const segments = [
+    { label: 'Input', value: u.input, color: '#e8ff47' },
+    { label: 'Cache Write', value: u.cache_write, color: '#ff6b35' },
+    { label: 'Cache Read', value: u.cache_read, color: '#47d4ff' },
+    { label: 'Output', value: u.output, color: '#c47aff' },
+  ];
+
+  let start = -Math.PI / 2;
+  const cx = W/2, cy = H/2, r = 70, innerR = 46;
+
+  for (const seg of segments) {
+    const angle = (seg.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + angle);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    start += angle;
+  }
+
+  // Inner circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fillStyle = '#161616';
+  ctx.fill();
+
+  document.getElementById('donutMain').textContent = fmt(total);
+
+  const legend = document.getElementById('tokenLegend');
+  legend.innerHTML = segments.map(s => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${s.color}"></div>
+      <div class="legend-name">${s.label}</div>
+      <div class="legend-val">${fmt(s.value)} (${total > 0 ? ((s.value/total)*100).toFixed(0) : 0}%)</div>
+    </div>
+  `).join('');
+}
+
+function renderCacheFlow() {
+  const u = state.totalUsage;
+  const total = u.input + u.cache_write + u.cache_read + u.output;
+  const cacheRatio = total > 0 ? (u.cache_read / total * 100).toFixed(0) : 0;
+  const writeRatio = total > 0 ? (u.cache_write / total * 100).toFixed(0) : 0;
+  const inputRatio = total > 0 ? (u.input / total * 100).toFixed(0) : 0;
+
+  const cacheSaved = (u.cache_read / 1e6) * (PRICE.input - PRICE.cache_read);
+
+  document.getElementById('tokenFlow').innerHTML = `
+    <div class="flow-box">
+      <div class="flow-label">Input (full price)</div>
+      <div class="flow-value" style="color:var(--accent)">${fmt(u.input)}</div>
+      <div class="flow-pct">${inputRatio}% of total · ${fmtCost((u.input/1e6)*PRICE.input)}</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-label">Cache Written</div>
+      <div class="flow-value" style="color:var(--accent2)">${fmt(u.cache_write)}</div>
+      <div class="flow-pct">${writeRatio}% of total · ${fmtCost((u.cache_write/1e6)*PRICE.cache_write)}</div>
+    </div>
+    <div class="flow-box">
+      <div class="flow-label">Cache Read (cheap)</div>
+      <div class="flow-value" style="color:var(--accent3)">${fmt(u.cache_read)}</div>
+      <div class="flow-pct">${cacheRatio}% of total · ${fmtCost((u.cache_read/1e6)*PRICE.cache_read)}</div>
+    </div>
+  `;
+
+  document.getElementById('cacheBar').innerHTML = `
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Cache saved you approximately <strong style="color:var(--green)">${fmtCost(cacheSaved)}</strong> vs full input pricing</div>
+    <div class="bar-track" style="height:12px;">
+      <div class="bar-fill" style="width:${cacheRatio}%;background:var(--accent3);"></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:'IBM Plex Mono',monospace">${cacheRatio}% cache hit rate</div>
+  `;
+}
+
+function renderPromptsChart() {
+  // Approximate input tokens per prompt (use session-level data)
+  const sessions = Object.values(state.sessions).sort((a,b) => b.inputTokens - a.inputTokens).slice(0,10);
+  const max = sessions[0]?.inputTokens || 1;
+
+  document.getElementById('promptsChart').innerHTML = sessions.map(s => {
+    const pct = (s.inputTokens / max * 100).toFixed(0);
+    const name = s.id.slice(0,8) + '…';
+    return `
+      <div class="bar-row">
+        <div class="bar-label" title="${s.id}">${name}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:var(--accent);opacity:0.8;"></div>
+        </div>
+        <div class="bar-val">${fmt(s.inputTokens)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCostPanel() {
+  const u = state.totalUsage;
+  const totalCost = calcTotalCost();
+  const inputCost = (u.input / 1e6) * PRICE.input;
+  const outputCost = (u.output / 1e6) * PRICE.output;
+  const cacheWriteCost = (u.cache_write / 1e6) * PRICE.cache_write;
+  const cacheReadCost = (u.cache_read / 1e6) * PRICE.cache_read;
+
+  document.getElementById('costKpis').innerHTML = `
+    <div class="kpi-card yellow">
+      <div class="kpi-label">Input Cost</div>
+      <div class="kpi-value">${fmtCost(inputCost)}</div>
+      <div class="kpi-sub">${fmt(u.input)} tokens @ $3/M</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Output Cost</div>
+      <div class="kpi-value">${fmtCost(outputCost)}</div>
+      <div class="kpi-sub">${fmt(u.output)} tokens @ $15/M</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Cache Write</div>
+      <div class="kpi-value">${fmtCost(cacheWriteCost)}</div>
+      <div class="kpi-sub">${fmt(u.cache_write)} tokens @ $3.75/M</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Cache Read</div>
+      <div class="kpi-value">${fmtCost(cacheReadCost)}</div>
+      <div class="kpi-sub">${fmt(u.cache_read)} tokens @ $0.30/M</div>
+    </div>
+  `;
+
+  const costs = [
+    { label: 'Output Tokens', cost: outputCost, color: 'var(--accent4)', tokens: u.output },
+    { label: 'Input Tokens', cost: inputCost, color: 'var(--accent)', tokens: u.input },
+    { label: 'Cache Write', cost: cacheWriteCost, color: 'var(--accent2)', tokens: u.cache_write },
+    { label: 'Cache Read', cost: cacheReadCost, color: 'var(--accent3)', tokens: u.cache_read },
+  ].sort((a,b) => b.cost - a.cost);
+
+  const maxCost = costs[0].cost;
+  document.getElementById('costByType').innerHTML = `
+    <div class="bar-chart">
+      ${costs.map(c => `
+        <div class="bar-row">
+          <div class="bar-label">${c.label}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${maxCost > 0 ? (c.cost/maxCost*100).toFixed(0) : 0}%;background:${c.color};"></div>
+          </div>
+          <div class="bar-val">${fmtCost(c.cost)}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">
+        Output tokens cost <strong style="color:var(--accent4)">5×</strong> more than input — every extra sentence in Claude's response matters.
+      </div>
+    </div>
+  `;
+
+  const sessions = Object.values(state.sessions).map(s => ({ ...s, cost: calcCost(s) }))
+    .sort((a,b) => b.cost - a.cost).slice(0, 10);
+  const maxSessCost = sessions[0]?.cost || 0.001;
+
+  document.getElementById('costBySession').innerHTML = sessions.map(s => `
+    <div class="bar-row">
+      <div class="bar-label" title="${s.id}">${s.id.slice(0,8)}…</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(s.cost/maxSessCost*100).toFixed(0)}%;background:var(--accent2);"></div>
+      </div>
+      <div class="bar-val cost-cell">${fmtCost(s.cost)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('costBreakdownTable').innerHTML = `
+    <table class="sessions-table">
+      <thead><tr>
+        <th>Cost Driver</th><th>Amount</th><th>% of Total</th><th>Price Rate</th><th>Optimization</th>
+      </tr></thead>
+      <tbody>
+        ${costs.map(c => `
+          <tr>
+            <td>${c.label}</td>
+            <td class="cost-cell">${fmtCost(c.cost)}</td>
+            <td>${totalCost > 0 ? (c.cost/totalCost*100).toFixed(1) : 0}%</td>
+            <td style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">$${c.label.includes('Output') ? '15' : c.label.includes('Cache Read') ? '0.30' : c.label.includes('Cache Write') ? '3.75' : '3.00'}/M</td>
+            <td style="font-size:11px;color:var(--muted)">${c.label.includes('Output') ? 'Shorter responses, ask for concise answers' : c.label.includes('Cache Read') ? 'Good — keep reusing context' : c.label.includes('Cache Write') ? 'Good — builds cache for future reuse' : 'Batch requests, use smaller context'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderHabits() {
+  const u = state.totalUsage;
+  const sessions = Object.values(state.sessions);
+  const toolCounts = {};
+  for (const t of state.toolCalls) {
+    toolCounts[t.name] = (toolCounts[t.name] || 0) + 1;
+  }
+
+  const habits = [];
+
+  // 1. Large context accumulation (high input tokens)
+  const avgInputPerSession = sessions.length > 0
+    ? sessions.reduce((a,s) => a + s.inputTokens, 0) / sessions.length
+    : 0;
+
+  if (avgInputPerSession > 20000) {
+    habits.push({
+      severity: 'critical',
+      title: 'Very Large Context Windows',
+      desc: `Average session input is ${fmt(avgInputPerSession)} tokens. Long conversations accumulate all prior messages in every request. The longer you chat, the more you pay per turn — exponentially. Consider starting fresh sessions for new tasks.`,
+      badge: `${fmt(avgInputPerSession)} avg input`,
+      badgeClass: 'badge-red',
+    });
+  } else if (avgInputPerSession > 8000) {
+    habits.push({
+      severity: 'warning',
+      title: 'Growing Context Windows',
+      desc: `Average session input is ${fmt(avgInputPerSession)} tokens. As conversations grow, each new message pays for all prior context again. Break long sessions into focused subtasks.`,
+      badge: `${fmt(avgInputPerSession)} avg input`,
+      badgeClass: 'badge-yellow',
+    });
+  }
+
+  // 2. Excessive file reading
+  const readCalls = toolCounts['Read'] || toolCounts['View'] || 0;
+  const totalReadCalls = (toolCounts['Read'] || 0) + (toolCounts['View'] || 0);
+  if (totalReadCalls > 20) {
+    habits.push({
+      severity: 'critical',
+      title: 'Excessive File Reading',
+      desc: `${totalReadCalls} Read/View tool calls detected. Every file read injects that file's content into the context. Large files (HTML, JS, source code) can be 10K–50K tokens each. Use offset/limit parameters to read only the section you need.`,
+      badge: `${totalReadCalls} reads`,
+      badgeClass: 'badge-red',
+    });
+  } else if (totalReadCalls > 5) {
+    habits.push({
+      severity: 'warning',
+      title: 'Frequent File Reading',
+      desc: `${totalReadCalls} file read calls. Consider whether you're reading the same files multiple times or reading entire files when you only need a section.`,
+      badge: `${totalReadCalls} reads`,
+      badgeClass: 'badge-yellow',
+    });
+  }
+
+  // 3. Failed reads (file too large)
+  const errorReads = state.largeReads.filter(r => r.error);
+  if (errorReads.length > 0) {
+    habits.push({
+      severity: 'critical',
+      title: 'Files Exceeding Token Limit',
+      desc: `${errorReads.length} file read(s) exceeded the token limit. Claude still paid for the context up to that point, and then needed another API call to retry. This doubles your cost. Use offset + limit from the start for large files.`,
+      badge: `${errorReads.length} failed reads`,
+      badgeClass: 'badge-red',
+    });
+  }
+
+  // 4. Many bash calls
+  const bashCalls = toolCounts['Bash'] || 0;
+  if (bashCalls > 30) {
+    habits.push({
+      severity: 'warning',
+      title: 'High Bash Tool Usage',
+      desc: `${bashCalls} Bash calls. Each tool result gets injected into context. Chain multiple commands in a single bash call (e.g. "cd x && ls && cat file") instead of one command per turn.`,
+      badge: `${bashCalls} bash calls`,
+      badgeClass: 'badge-yellow',
+    });
+  }
+
+  // 5. Low cache hit rate
+  const totalIn = u.input + u.cache_write + u.cache_read;
+  const cacheHit = totalIn > 0 ? u.cache_read / totalIn : 0;
+  if (cacheHit < 0.3) {
+    habits.push({
+      severity: 'warning',
+      title: 'Low Cache Hit Rate',
+      desc: `Only ${(cacheHit*100).toFixed(0)}% of input tokens came from cache. Cache dramatically reduces cost (10× cheaper). This could mean sessions are too short, context changes too much between turns, or you have many one-off sessions instead of focused long ones.`,
+      badge: `${(cacheHit*100).toFixed(0)}% hit rate`,
+      badgeClass: 'badge-yellow',
+    });
+  } else {
+    habits.push({
+      severity: 'info',
+      title: 'Good Cache Utilization ✓',
+      desc: `${(cacheHit*100).toFixed(0)}% of input tokens were cache hits. Your long-context sessions are paying off — Claude caches your system prompt + prior context across turns.`,
+      badge: `${(cacheHit*100).toFixed(0)}% cache hit`,
+      badgeClass: 'badge-blue',
+    });
+  }
+
+  // 6. High output token ratio
+  const outputRatio = (u.input + u.output) > 0 ? u.output / (u.input + u.output) : 0;
+  if (outputRatio > 0.25) {
+    habits.push({
+      severity: 'warning',
+      title: 'High Output Token Ratio',
+      desc: `Output is ${(outputRatio*100).toFixed(0)}% of (input+output) token spend. Output tokens cost 5× more than input. If Claude is writing long explanations, code files, or verbose responses, ask for concise answers explicitly: "respond briefly", "just the code", "no explanation needed".`,
+      badge: `${(outputRatio*100).toFixed(0)}% output ratio`,
+      badgeClass: 'badge-yellow',
+    });
+  }
+
+  // 7. Multi-session same project
+  const projectSessions = {};
+  for (const s of sessions) {
+    const p = s.project;
+    projectSessions[p] = (projectSessions[p] || 0) + 1;
+  }
+  const highRepeat = Object.entries(projectSessions).filter(([,v]) => v > 3);
+  if (highRepeat.length > 0) {
+    habits.push({
+      severity: 'info',
+      title: 'Multiple Sessions per Project',
+      desc: `Some projects have ${highRepeat[0][1]} sessions. Each new session starts context from scratch — losing cache. If you're doing related work, staying in one session and using /clear to reset context selectively is better than starting new sessions.`,
+      badge: `${highRepeat[0][1]} sessions`,
+      badgeClass: 'badge-blue',
+    });
+  }
+
+  // 8. Thinking tokens
+  const hasThinking = state.allMessages && sessions.some(s => s.inputTokens > 1000);
+  if (u.output > 5000) {
+    habits.push({
+      severity: 'info',
+      title: 'Extended Thinking Enabled',
+      desc: `Claude used extended thinking (visible as <thinking> blocks). Thinking tokens are billed at output rates ($15/M). Only enable extended thinking for tasks that genuinely benefit from deep reasoning — it can double output costs.`,
+      badge: 'thinking detected',
+      badgeClass: 'badge-blue',
+    });
+  }
+
+  if (habits.length === 0) {
+    habits.push({
+      severity: 'info',
+      title: 'No Major Issues Found',
+      desc: 'Your usage looks reasonable based on available data. Load more session files to get a more complete picture.',
+      badge: 'all clear',
+      badgeClass: 'badge-blue',
+    });
+  }
+
+  document.getElementById('habitsGrid').innerHTML = habits.map(h => `
+    <div class="habit-item ${h.severity}">
+      <div>
+        <div class="habit-title">${h.title}</div>
+        <div class="habit-desc">${h.desc}</div>
+      </div>
+      <div class="habit-badge ${h.badgeClass}">${h.badge}</div>
+    </div>
+  `).join('');
+}
+
+function renderTools() {
+  const counts = {};
+  for (const t of state.toolCalls) {
+    if (!counts[t.name]) counts[t.name] = { count: 0, name: t.name };
+    counts[t.name].count++;
+  }
+
+  const sorted = Object.values(counts).sort((a,b) => b.count - a.count);
+  const total = sorted.reduce((a,t) => a + t.count, 0);
+  const maxCount = sorted[0]?.count || 1;
+
+  document.getElementById('toolKpis').innerHTML = `
+    <div class="kpi-card yellow">
+      <div class="kpi-label">Total Tool Calls</div>
+      <div class="kpi-value">${total}</div>
+      <div class="kpi-sub">across all sessions</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Unique Tools</div>
+      <div class="kpi-value">${sorted.length}</div>
+      <div class="kpi-sub">different tool types</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Most Used</div>
+      <div class="kpi-value" style="font-size:14px">${sorted[0]?.name || '—'}</div>
+      <div class="kpi-sub">${sorted[0]?.count || 0} calls</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Large File Reads</div>
+      <div class="kpi-value">${state.largeReads.length}</div>
+      <div class="kpi-sub">50+ line reads detected</div>
+    </div>
+  `;
+
+  document.getElementById('toolTable').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:0;">
+      <div class="tool-row" style="padding-bottom:4px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2)">Tool</div>
+        <div></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);text-align:right">Calls</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);text-align:right">% of total</div>
+      </div>
+      ${sorted.map(t => `
+        <div class="tool-row">
+          <div class="tool-name">${t.name}</div>
+          <div class="bar-track" style="height:6px;">
+            <div class="bar-fill" style="width:${(t.count/maxCount*100).toFixed(0)}%;background:var(--accent3);"></div>
+          </div>
+          <div class="tool-count">${t.count}</div>
+          <div class="tool-cost">${(t.count/total*100).toFixed(1)}%</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  const sorted2 = [...state.largeReads].sort((a,b) => b.lines - a.lines).slice(0, 8);
+  document.getElementById('largeReads').innerHTML = sorted2.length === 0
+    ? '<div style="color:var(--muted);font-size:12px;">No large reads detected (good!)</div>'
+    : `<table class="sessions-table">
+      <thead><tr><th>File</th><th>Lines Read</th><th>Total Lines</th><th>Status</th></tr></thead>
+      <tbody>
+        ${sorted2.map(r => `
+          <tr>
+            <td style="font-size:10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.file.split('/').slice(-3).join('/')}</td>
+            <td class="${r.error ? 'cost-cell' : ''}">${r.lines}</td>
+            <td>${r.totalLines || '?'}</td>
+            <td>${r.error ? '<span style="color:var(--red)">LIMIT EXCEEDED</span>' : '<span style="color:var(--yellow)">Large read</span>'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderSessions() {
+  const sessions = Object.values(state.sessions)
+    .map(s => ({ ...s, cost: calcCost(s) }))
+    .sort((a,b) => b.cost - a.cost);
+
+  document.getElementById('sessionsBody').innerHTML = sessions.map(s => {
+    const avgIn = s.prompts > 0 ? Math.round(s.inputTokens / s.prompts) : 0;
+    return `
+      <tr>
+        <td style="font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+            title="${s.id}">${s.id.slice(0,12)}…</td>
+        <td>${s.prompts}</td>
+        <td>${fmt(s.inputTokens)}</td>
+        <td>${fmt(s.outputTokens)}</td>
+        <td class="cache-cell">${fmt(s.cacheRead)}</td>
+        <td class="cost-cell">${fmtCost(s.cost)}</td>
+        <td>${fmt(avgIn)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderTips() {
+  const u = state.totalUsage;
+  const sessions = Object.values(state.sessions);
+  const totalCost = calcTotalCost();
+  const totalReadCalls = (state.toolCalls.filter(t => t.name === 'Read' || t.name === 'View')).length;
+  const cacheHit = (u.input + u.cache_write + u.cache_read) > 0
+    ? u.cache_read / (u.input + u.cache_write + u.cache_read) : 0;
+  const outputRatio = (u.input + u.output) > 0 ? u.output / (u.input + u.output) : 0;
+
+  document.getElementById('tipsSub').textContent =
+    `Based on ${sessions.length} session(s) · ${fmtCost(totalCost)} total spend`;
+
+  const outputSavingPct = Math.min(outputRatio * 0.5 * 100, 40);
+  const cacheSavingPct = Math.max((0.7 - cacheHit) * 50, 0);
+  const readSavingPct = totalReadCalls > 10 ? 20 : 0;
+
+  const tips = [
+    {
+      num: '01',
+      cls: '',
+      title: 'Ask for concise responses',
+      body: 'Output tokens cost 5× more than input. Prefix prompts with "be concise", "just the code", or "no explanation" when you don\'t need verbose answers. Set this in your CLAUDE.md as a global rule.',
+      saving: `~${outputSavingPct.toFixed(0)}% output cost reduction`,
+    },
+    {
+      num: '02',
+      cls: 'orange',
+      title: 'Use offset+limit for file reads',
+      body: 'When reading large files, always use offset and limit parameters. Reading line 1–50 of a 900-line HTML file costs 90% less than reading the whole thing. This is especially true for index.html, source files, and JSON configs.',
+      saving: `~${readSavingPct.toFixed(0)}% from read optimization`,
+    },
+    {
+      num: '03',
+      cls: 'blue',
+      title: 'Batch commands in single Bash calls',
+      body: 'Instead of: "ls", then "cat file", then "git status" — do it all in one: "ls && cat file && git status". Each separate tool call pays for the growing context window again.',
+      saving: 'Reduces total API calls',
+    },
+    {
+      num: '04',
+      cls: 'purple',
+      title: 'Use CLAUDE.md for persistent context',
+      body: 'Put architecture decisions, coding standards, and project context in CLAUDE.md. Claude reads it once (cache write) then reuses it cheaply (cache read at 10¢/M) instead of you re-explaining every session.',
+      saving: `~${cacheSavingPct.toFixed(0)}% from better caching`,
+    },
+    {
+      num: '05',
+      cls: '',
+      title: 'Start fresh sessions for new tasks',
+      body: 'Long sessions accumulate tokens — every turn re-sends all prior context. For unrelated tasks, start a new session. Use /clear in Claude Code to reset context mid-session without losing the CLAUDE.md cache.',
+      saving: 'Stops context bloat',
+    },
+    {
+      num: '06',
+      cls: 'orange',
+      title: 'Bundle multiple small changes per prompt',
+      body: 'Instead of 6 separate "make this button smaller", "change this color", "add margin" messages — bundle them: list all changes in one prompt. Each turn resets the full context cost.',
+      saving: 'Fewer high-cost turns',
+    },
+    {
+      num: '07',
+      cls: 'blue',
+      title: 'Disable extended thinking for simple tasks',
+      body: '<thinking> blocks are billed at output token rates ($15/M). Only use extended thinking for complex reasoning tasks (architecture decisions, debugging hard bugs). For UI tweaks and simple edits, it\'s overkill.',
+      saving: 'Up to 50% output cost on eligible tasks',
+    },
+    {
+      num: '08',
+      cls: 'purple',
+      title: 'Reference files instead of reading them',
+      body: 'When Claude has already read a file in the same session, you can refer to it by name instead of having it re-read. Claude keeps it in context. Only re-read if you\'ve changed it.',
+      saving: 'Eliminates redundant reads',
+    },
+  ];
+
+  document.getElementById('tipsGrid').innerHTML = tips.map(t => `
+    <div class="tip-card ${t.cls}">
+      <div class="tip-num">tip ${t.num}</div>
+      <div class="tip-title">${t.title}</div>
+      <div class="tip-body">${t.body}</div>
+      <div class="tip-saving">⬇ ${t.saving}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('generalTips').innerHTML = `
+    <div class="habit-item info">
+      <div>
+        <div class="habit-title">Write a good CLAUDE.md</div>
+        <div class="habit-desc">Your CLAUDE.md gets cached and reused cheaply across turns. Put coding conventions, preferred patterns, project architecture, and "never do X" rules there. It's a one-time cache write that pays off across every session.</div>
+      </div>
+      <div class="habit-badge badge-blue">high impact</div>
+    </div>
+    <div class="habit-item info">
+      <div>
+        <div class="habit-title">Use Claude Code's /clear command</div>
+        <div class="habit-desc">Within a session, /clear resets conversation history while keeping CLAUDE.md in cache. Use it after finishing a subtask so the next subtask doesn't pay for prior context.</div>
+      </div>
+      <div class="habit-badge badge-blue">free action</div>
+    </div>
+    <div class="habit-item info">
+      <div>
+        <div class="habit-title">Check what Claude is about to read</div>
+        <div class="habit-desc">Before approving a Read tool call, ask: do I actually need this file? Is Claude going to read a 1000-line file to change 3 lines? Ask Claude to use grep/search first to locate exactly what it needs.</div>
+      </div>
+      <div class="habit-badge badge-blue">habit change</div>
+    </div>
+  `;
+}
+
+// ============================================================
+// FILE LOADING
+// ============================================================
+async function loadFiles(files) {
+  const pills = document.getElementById('filePills');
+  pills.innerHTML = '';
+
+  for (const f of files) {
+    const pill = document.createElement('div');
+    pill.className = 'file-pill';
+    pill.textContent = f.name;
+    pills.appendChild(pill);
+
+    try {
+      const text = await f.text();
+      parseLines(text, f.name);
+      pill.className = 'file-pill loaded';
+      pill.textContent = '✓ ' + f.name;
+    } catch(e) {
+      pill.className = 'file-pill error';
+      pill.textContent = '✗ ' + f.name;
+    }
+  }
+
+  // Show dashboard
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  render();
+}
+
+// ============================================================
+// DRAG & DROP
+// ============================================================
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  loadFiles([...e.dataTransfer.files].filter(f => f.name.endsWith('.jsonl')));
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) loadFiles([...e.target.files]);
+});
+
+// ============================================================
+// NAV
+// ============================================================
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    item.classList.add('active');
+    const panel = document.getElementById('panel-' + item.dataset.panel);
+    if (panel) panel.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
