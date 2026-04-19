@@ -1,5 +1,21 @@
 # claude.md — Project Reference: claude-token-tracker
 
+## ABOUT THE PROJECT
+
+
+Read these files to understand the context about this project
+
+- **features & architecture:** `./FEATURES.md`
+
+---
+
+## ABOUT THE PROJECT
+
+
+Ignore any files in the project which matches the *_HUMAN.MD  e.g. ./DEV_PLAN_HUMAN.MD 
+These files are used by humans. It may have misleading information and random thoughts
+
+
 
 ---
 

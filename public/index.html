@@ -49,6 +49,8 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 .ntag{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;padding:1px 5px;border-radius:1px;margin-left:auto}
 .tw{background:rgba(255,107,53,.12);color:var(--acc2)}
 .tn{background:rgba(232,255,71,.12);color:var(--acc)}
+.tb{background:rgba(71,212,255,.12);color:var(--acc3)}
+.tp{background:rgba(196,122,255,.12);color:var(--acc4)}
 
 .content{padding:22px 26px;overflow-y:auto}
 .panel{display:none}.panel.on{display:block}
@@ -98,11 +100,25 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 .bdr-r{background:rgba(255,71,71,.12);color:var(--red)}.bdr-y{background:rgba(255,204,0,.12);color:var(--yel)}
 .bdr-b{background:rgba(71,212,255,.12);color:var(--acc3)}.bdr-g{background:rgba(71,255,138,.12);color:var(--green)}
 
+/* Insights panel */
+.insight{background:var(--surf2);border:1px solid var(--bdr);border-radius:2px;padding:13px 15px;margin-bottom:8px;border-left:3px solid var(--mut2)}
+.insight.warning{border-left-color:var(--yel)}
+.insight.info{border-left-color:var(--acc3)}
+.insight.neutral{border-left-color:var(--mut)}
+.insight-title{font-weight:600;font-size:12px;color:var(--txt);margin-bottom:4px}
+.insight-desc{font-size:11px;color:var(--mut);line-height:1.6;margin-bottom:6px}
+.insight-action{font-size:11px;color:var(--green);font-style:italic}
+.insight-type{font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;padding:2px 6px;border-radius:1px;float:right;margin-left:8px}
+.it-w{background:rgba(255,204,0,.12);color:var(--yel)}
+.it-i{background:rgba(71,212,255,.12);color:var(--acc3)}
+.it-n{background:rgba(102,102,102,.2);color:var(--mut)}
+
 .tbl{width:100%;border-collapse:collapse;font-size:11px}
 .tbl th{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);text-align:left;padding:6px 9px;border-bottom:1px solid var(--bdr)}
 .tbl td{padding:6px 9px;border-bottom:1px solid var(--bdr);font-family:'IBM Plex Mono',monospace}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:var(--surf2)}
+.tbl tr.clickable{cursor:pointer}
 .tc{color:var(--acc2)}.cc{color:var(--green)}.c3{color:var(--acc3)}
 
 .donut-wrap{position:relative;width:152px;height:152px;flex-shrink:0}
@@ -131,6 +147,35 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 .tct{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt);text-align:right}
 .tpc{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut);text-align:right}
 
+/* Top Prompts */
+.prompt-row{padding:10px 0;border-bottom:1px solid var(--bdr)}
+.prompt-row:last-child{border-bottom:none}
+.prompt-rank{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut);margin-bottom:4px}
+.prompt-text{font-size:12px;color:var(--txt);margin-bottom:6px;line-height:1.5;word-break:break-word}
+.prompt-bars{display:grid;grid-template-columns:80px 1fr 70px;gap:6px;align-items:center;margin-bottom:3px;font-size:10px}
+.prompt-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut)}
+.prompt-cost{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--acc2);font-weight:600}
+.prompt-meta{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut)}
+
+/* Session drill-down modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.overlay.on{display:flex}
+.modal{background:var(--surf);border:1px solid var(--bdr2);border-radius:3px;width:min(820px,95vw);max-height:88vh;overflow-y:auto;padding:22px 24px}
+.modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--bdr)}
+.modal-title{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--txt)}
+.modal-sub{font-size:10px;color:var(--mut);margin-top:3px}
+.close-btn{background:none;border:1px solid var(--bdr2);color:var(--mut);cursor:pointer;font-size:14px;padding:3px 10px;border-radius:2px;font-family:'IBM Plex Mono',monospace}
+.close-btn:hover{color:var(--txt);border-color:var(--txt)}
+.turn-list{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto;margin-top:8px}
+.turn-row{display:grid;grid-template-columns:28px 1fr 70px 55px 40px;gap:8px;align-items:center;padding:4px 6px;border-radius:2px;font-size:10px}
+.turn-row:hover{background:var(--surf2)}
+.turn-num{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut);text-align:right}
+.turn-prompt{font-size:10px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.turn-prompt.has-p{color:var(--acc3)}
+.turn-cost{font-family:'IBM Plex Mono',monospace;font-size:10px;text-align:right}
+.turn-model{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut);text-align:right}
+.turn-tools{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut2);text-align:right}
+
 .loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:var(--mut);font-family:'IBM Plex Mono',monospace;font-size:12px}
 .spin{width:12px;height:12px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -151,18 +196,30 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
   </div>
 </header>
 
+<!-- Drill-down overlay -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeOverlay()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
 <div class="shell">
   <nav class="sbar">
     <div class="nav-sec">
       <div class="nav-lbl">Overview</div>
       <div class="nav-item on" data-p="overview"><div class="ndot"></div>Summary</div>
-      <div class="nav-item" data-p="trend"><div class="ndot"></div>Trend <div class="ntag tn">time</div></div>
+      <div class="nav-item" data-p="daily"><div class="ndot"></div>Daily <div class="ntag tn">chart</div></div>
+      <div class="nav-item" data-p="trend"><div class="ndot"></div>Weekly</div>
       <div class="nav-item" data-p="projects"><div class="ndot"></div>By Project</div>
     </div>
     <div class="nav-sec">
       <div class="nav-lbl">Analysis</div>
-      <div class="nav-item" data-p="habits"><div class="ndot"></div>Bad Habits <div class="ntag tw">!</div></div>
+      <div class="nav-item" data-p="insights"><div class="ndot"></div>Insights <div class="ntag tw">!</div></div>
+      <div class="nav-item" data-p="habits"><div class="ndot"></div>Bad Habits</div>
       <div class="nav-item" data-p="tools"><div class="ndot"></div>Tool Usage</div>
+    </div>
+    <div class="nav-sec">
+      <div class="nav-lbl">Models & Spend</div>
+      <div class="nav-item" data-p="models"><div class="ndot"></div>Model Split <div class="ntag tp">$</div></div>
+      <div class="nav-item" data-p="topPrompts"><div class="ndot"></div>Top Prompts</div>
       <div class="nav-item" data-p="sessions"><div class="ndot"></div>Sessions</div>
     </div>
     <div class="nav-sec">
@@ -179,7 +236,6 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 <script>
 let D = null;
 let activePanel = 'overview';
-const PRICE = { input:3, cache_write:3.75, cache_read:.30, output:15 };
 
 const $  = id => document.getElementById(id);
 const qs = s  => document.querySelector(s);
@@ -200,6 +256,32 @@ function fmtD(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
+function fmtDFull(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function modelLabel(m) {
+  if (!m) return '?';
+  const ml = m.toLowerCase();
+  if (ml.includes('opus'))   return 'Opus';
+  if (ml.includes('sonnet')) return 'Sonnet';
+  if (ml.includes('haiku'))  return 'Haiku';
+  return m.split('-').slice(-2).join('-');
+}
+function modelColor(m) {
+  if (!m) return '#666';
+  const ml = m.toLowerCase();
+  if (ml.includes('opus'))   return '#ff6b35';
+  if (ml.includes('sonnet')) return '#e8ff47';
+  if (ml.includes('haiku'))  return '#47ff8a';
+  return '#47d4ff';
+}
+
+// ── overlay ────────────────────────────────────────────────────────────────
+function closeOverlay() {
+  $('overlay').classList.remove('on');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay(); });
 
 // ── fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
@@ -228,19 +310,27 @@ function renderAll() {
 
   $('content').innerHTML = `
     <div class="panel on"  id="panel-overview"></div>
+    <div class="panel"     id="panel-daily"></div>
     <div class="panel"     id="panel-trend"></div>
     <div class="panel"     id="panel-projects"></div>
+    <div class="panel"     id="panel-insights"></div>
     <div class="panel"     id="panel-habits"></div>
     <div class="panel"     id="panel-tools"></div>
+    <div class="panel"     id="panel-models"></div>
+    <div class="panel"     id="panel-topPrompts"></div>
     <div class="panel"     id="panel-sessions"></div>
     <div class="panel"     id="panel-tips"></div>
   `;
 
   buildOverview();
+  buildDaily();
   buildTrend();
   buildProjects();
+  buildInsights();
   buildHabits();
   buildTools();
+  buildModels();
+  buildTopPrompts();
   buildSessions();
   buildTips();
 
@@ -253,12 +343,17 @@ function renderAll() {
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
       const pnl = $('panel-'+el.dataset.p);
       if (pnl) pnl.classList.add('on');
-      if (el.dataset.p === 'trend') setTimeout(drawTrends, 40);
+      if (el.dataset.p === 'trend')  setTimeout(drawTrends, 40);
+      if (el.dataset.p === 'daily')  setTimeout(drawDailyChart, 40);
+      if (el.dataset.p === 'models') setTimeout(drawModelDonut, 40);
     };
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
   const active = $('panel-'+activePanel);
   if (active) active.classList.add('on');
+  if (activePanel === 'trend')  setTimeout(drawTrends, 40);
+  if (activePanel === 'daily')  setTimeout(drawDailyChart, 40);
+  if (activePanel === 'models') setTimeout(drawModelDonut, 40);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -269,11 +364,19 @@ function buildOverview() {
   const total = t.input + t.output + t.cache_write + t.cache_read;
   const denom = t.input + t.cache_write + t.cache_read;
   const cacheHit = denom > 0 ? (t.cache_read / denom * 100).toFixed(1) : 0;
-  const cacheSaved = (t.cache_read / 1e6) * (PRICE.input - PRICE.cache_read);
+  const cacheSaved = (t.cache_read / 1e6) * (3.0 - 0.30);
   const first = D.sessions.length ? fmtD(D.sessions.at(-1)?.firstTs) : '—';
   const last  = D.sessions.length ? fmtD(D.sessions[0]?.firstTs)     : '—';
 
   const {cur, prev} = periodDiff(7);
+
+  // Model summary for overview
+  const topModels = (D.modelBreakdown || []).slice(0, 3);
+  const modelSummary = topModels.map(m => {
+    const lbl = modelLabel(m.model);
+    const pct = D.totalCost > 0 ? (m.cost / D.totalCost * 100).toFixed(0) : 0;
+    return `<span style="color:${modelColor(m.model)}">${lbl}</span> ${pct}%`;
+  }).join(' · ');
 
   $('panel-overview').innerHTML = `
     <div class="pg-hdr">
@@ -312,27 +415,138 @@ function buildOverview() {
       <div class="card">
         <div class="card-ttl">Cost by Type</div>
         <div id="costTypeChart"></div>
-        <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)">
-          Output costs <strong style="color:var(--acc4)">5×</strong> more · Cache reads are <strong style="color:var(--green)">10×</strong> cheaper
-        </div>
+        ${modelSummary ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr);font-size:11px;color:var(--mut)">Models: ${modelSummary}</div>` : ''}
       </div>
     </div>
+
+    ${D.insights && D.insights.length > 0 ? `
+    <div class="card">
+      <div class="card-ttl">Top Insight</div>
+      ${renderInsightCard(D.insights.find(i => i.type === 'warning') || D.insights[0])}
+    </div>` : ''}
   `;
 
   drawDonut('donutC', t, 'donutLeg');
   buildCostType('costTypeChart', t);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TREND
-// ─────────────────────────────────────────────────────────────────────────────
-let trendDrawn = false;
+function renderInsightCard(ins) {
+  if (!ins) return '';
+  const typeCls = ins.type === 'warning' ? 'it-w' : ins.type === 'info' ? 'it-i' : 'it-n';
+  return `<div>
+    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">
+      <span class="insight-type ${typeCls}">${ins.type}</span>
+      <div class="insight-title" style="flex:1">${ins.title}</div>
+    </div>
+    <div class="insight-desc">${ins.description}</div>
+    ${ins.action ? `<div class="insight-action">→ ${ins.action}</div>` : ''}
+  </div>`;
+}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DAILY CHART
+// ─────────────────────────────────────────────────────────────────────────────
+function buildDaily() {
+  const daily = D.dailyUsage || [];
+  const el = $('panel-daily');
+  if (!daily.length) {
+    el.innerHTML = '<div class="pg-hdr"><div class="pg-title">Daily Usage</div></div><div style="color:var(--mut);font-size:12px">Not enough data yet.</div>';
+    return;
+  }
+
+  // Show last 60 days
+  const shown = daily.slice(-60);
+  const maxCost = Math.max(...shown.map(d => d.cost), 0.001);
+
+  el.innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Daily Usage</div>
+      <div class="pg-sub">Stacked by token type · last ${shown.length} days</div>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">Daily Token Volume (stacked)</div>
+      <div class="trend-wrap"><canvas id="dailyStackCanvas" class="trend-c" height="160"></canvas></div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:10px;font-family:'IBM Plex Mono',monospace">
+        <span><span style="display:inline-block;width:8px;height:8px;background:#e8ff47;border-radius:1px;margin-right:4px"></span>Input</span>
+        <span><span style="display:inline-block;width:8px;height:8px;background:#ff6b35;border-radius:1px;margin-right:4px"></span>Cache Write</span>
+        <span><span style="display:inline-block;width:8px;height:8px;background:#47d4ff;border-radius:1px;margin-right:4px"></span>Cache Read</span>
+        <span><span style="display:inline-block;width:8px;height:8px;background:#c47aff;border-radius:1px;margin-right:4px"></span>Output</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">Daily Cost — bar chart</div>
+      <div class="bar-chart">
+        ${shown.slice(-20).reverse().map(d => `
+          <div class="bar-row br3">
+            <div class="blbl">${d.date.slice(5)}</div>
+            <div class="btrk"><div class="bfil" style="width:${(d.cost/maxCost*100).toFixed(0)}%;background:var(--acc2)"></div></div>
+            <div class="bval tc">${fmtC(d.cost)}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function drawDailyChart() {
+  const canvas = $('dailyStackCanvas');
+  if (!canvas) return;
+  const daily = D.dailyUsage || [];
+  const shown = daily.slice(-60);
+  if (!shown.length) return;
+
+  const W = canvas.parentElement.clientWidth || 600;
+  const H = 160;
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const pad = { t: 10, r: 10, b: 28, l: 10 };
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+  const barW = Math.max(2, Math.floor(cw / shown.length) - 1);
+
+  const maxTotal = Math.max(...shown.map(d => d.input + d.output + d.cache_write + d.cache_read), 1);
+
+  shown.forEach((d, i) => {
+    const x = pad.l + (i / shown.length) * cw;
+    const total = d.input + d.output + d.cache_write + d.cache_read;
+    const scale = ch / maxTotal;
+
+    const layers = [
+      { val: d.input,       color: '#e8ff47' },
+      { val: d.cache_write, color: '#ff6b35' },
+      { val: d.cache_read,  color: '#47d4ff' },
+      { val: d.output,      color: '#c47aff' },
+    ];
+
+    let yOffset = pad.t + ch;
+    for (const layer of layers) {
+      const h = layer.val * scale;
+      yOffset -= h;
+      ctx.fillStyle = layer.color;
+      ctx.fillRect(x, yOffset, barW, h);
+    }
+
+    // x-axis label every ~7 days
+    if (shown.length <= 30 || i % 7 === 0) {
+      ctx.fillStyle = '#555';
+      ctx.font = '8px "IBM Plex Mono",monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.date.slice(5), x + barW / 2, H - 5);
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TREND (weekly)
+// ─────────────────────────────────────────────────────────────────────────────
 function buildTrend() {
   const weeks = D.weeklyTrend;
   const el = $('panel-trend');
   if (!weeks.length) {
-    el.innerHTML = '<div class="pg-hdr"><div class="pg-title">Trend</div></div><div style="color:var(--mut);font-size:12px">Not enough data yet.</div>';
+    el.innerHTML = '<div class="pg-hdr"><div class="pg-title">Weekly Trend</div></div><div style="color:var(--mut);font-size:12px">Not enough data yet.</div>';
     return;
   }
 
@@ -440,7 +654,60 @@ function buildProjects() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HABITS
+// INSIGHTS (server-computed)
+// ─────────────────────────────────────────────────────────────────────────────
+function buildInsights() {
+  const insights = D.insights || [];
+  const el = $('panel-insights');
+
+  if (!insights.length) {
+    el.innerHTML = `
+      <div class="pg-hdr">
+        <div class="pg-title">Usage Insights</div>
+        <div class="pg-sub">Load more sessions for a complete picture</div>
+      </div>
+      <div style="color:var(--mut);font-size:12px">No insights detected yet.</div>`;
+    return;
+  }
+
+  const warnings = insights.filter(i => i.type === 'warning');
+  const infos    = insights.filter(i => i.type !== 'warning');
+
+  el.innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Usage Insights</div>
+      <div class="pg-sub">${insights.length} patterns detected across ${D.sessions.length} sessions</div>
+    </div>
+
+    ${warnings.length ? `
+    <div class="card-ttl" style="margin-bottom:8px;color:var(--yel)">⚠ Action Required (${warnings.length})</div>
+    ${warnings.map(ins => `
+      <div class="insight warning">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">
+          <span class="insight-type it-w">warning</span>
+          <div class="insight-title" style="flex:1">${ins.title}</div>
+        </div>
+        <div class="insight-desc">${ins.description}</div>
+        ${ins.action ? `<div class="insight-action">→ ${ins.action}</div>` : ''}
+      </div>`).join('')}
+    <div style="margin-bottom:14px"></div>` : ''}
+
+    ${infos.length ? `
+    <div class="card-ttl" style="margin-bottom:8px">ℹ Observations (${infos.length})</div>
+    ${infos.map(ins => `
+      <div class="insight ${ins.type}">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">
+          <span class="insight-type ${ins.type === 'info' ? 'it-i' : 'it-n'}">${ins.type}</span>
+          <div class="insight-title" style="flex:1">${ins.title}</div>
+        </div>
+        <div class="insight-desc">${ins.description}</div>
+        ${ins.action ? `<div class="insight-action">→ ${ins.action}</div>` : ''}
+      </div>`).join('')}` : ''}
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HABITS (client-computed heuristics)
 // ─────────────────────────────────────────────────────────────────────────────
 function buildHabits() {
   const t = D.totals;
@@ -457,59 +724,55 @@ function buildHabits() {
 
   const habits = [];
 
-  // Trend direction
   if (weeks.length >= 3) {
     const r = weeks.slice(-3).map(w=>w.cost);
     if (r[2]>r[1] && r[1]>r[0])
       habits.push({sev:'crit',t:'Cost Trending Up 3 Weeks Running',
-        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Costs are rising. Check the Trend panel to see which week spiked.`,
-        b:'↑ rising',bc:'bdr-r'});
+        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Costs are rising.`,b:'↑ rising',bc:'bdr-r'});
     else if (r[2]<r[1] && r[1]<r[0])
       habits.push({sev:'info',t:'Cost Trending Down ✓',
-        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Your habits are improving.`,
-        b:'↓ falling',bc:'bdr-g'});
+        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Habits improving.`,b:'↓ falling',bc:'bdr-g'});
   }
 
   if (avgIn > 20000)
     habits.push({sev:'crit',t:'Very Large Context Windows',
-      d:`Average session input: ${fmt(avgIn)} tokens. Every turn re-sends all prior messages. Cost grows with conversation length. Start fresh sessions per task; use /clear to reset mid-session.`,
+      d:`Average session input: ${fmt(avgIn)} tokens. Every turn re-sends all prior messages. Use /clear to reset mid-session.`,
       b:`${fmt(avgIn)} avg input`,bc:'bdr-r'});
   else if (avgIn > 8000)
     habits.push({sev:'warn',t:'Growing Context Windows',
-      d:`Average session input: ${fmt(avgIn)} tokens. Break long work into focused sub-sessions to contain context bloat.`,
+      d:`Average session input: ${fmt(avgIn)} tokens. Break long work into focused sub-sessions.`,
       b:`${fmt(avgIn)} avg input`,bc:'bdr-y'});
 
   if (totalReads > 20)
     habits.push({sev:'crit',t:'Excessive File Reading',
-      d:`${totalReads} Read/View calls. Each read injects file content into context. Use offset+limit to read only what's needed. Ask Claude to search/grep before reading entire files.`,
+      d:`${totalReads} Read/View calls. Use offset+limit. Ask Claude to search/grep before reading entire files.`,
       b:`${totalReads} reads`,bc:'bdr-r'});
   else if (totalReads > 5)
     habits.push({sev:'warn',t:'Frequent File Reading',
-      d:`${totalReads} file reads. Check for re-reading files already in context, or reading whole files when a section suffices.`,
-      b:`${totalReads} reads`,bc:'bdr-y'});
+      d:`${totalReads} file reads. Check for redundant re-reads.`,b:`${totalReads} reads`,bc:'bdr-y'});
 
   if (errReads > 0)
     habits.push({sev:'crit',t:'Files Hit Token Limit',
-      d:`${errReads} read(s) exceeded the file token cap — Claude paid for context then retried, doubling cost. Always pass offset+limit for large files.`,
+      d:`${errReads} read(s) exceeded the file token cap — doubled cost. Always pass offset+limit for large files.`,
       b:`${errReads} failed reads`,bc:'bdr-r'});
 
   if (cacheHit >= 0.5)
     habits.push({sev:'info',t:'Good Cache Utilization ✓',
-      d:`${(cacheHit*100).toFixed(0)}% of input came from cache (10× cheaper than full input). Keep sessions focused.`,
+      d:`${(cacheHit*100).toFixed(0)}% of input from cache (10× cheaper). Keep sessions focused.`,
       b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-g'});
   else
     habits.push({sev:'warn',t:'Low Cache Hit Rate',
-      d:`Only ${(cacheHit*100).toFixed(0)}% cache hits. Cache tokens cost 10× less. More focused sessions + stable CLAUDE.md improve this.`,
+      d:`Only ${(cacheHit*100).toFixed(0)}% cache hits. Focused sessions + stable CLAUDE.md improve this.`,
       b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-y'});
 
   if (outRatio > 0.25)
     habits.push({sev:'warn',t:'High Output Token Ratio',
-      d:`Output is ${(outRatio*100).toFixed(0)}% of your spend. Output costs 5× more than input. Use "be concise" / "just the code" / "no explanation" in prompts. Add this globally to CLAUDE.md.`,
+      d:`Output is ${(outRatio*100).toFixed(0)}% of spend. Output costs 5× more. Add "be concise" globally to CLAUDE.md.`,
       b:`${(outRatio*100).toFixed(0)}% output`,bc:'bdr-y'});
 
   if (bash > 30)
     habits.push({sev:'warn',t:'High Bash Tool Usage',
-      d:`${bash} Bash calls. Chain commands in one call ("cd x && ls && cat file") instead of separate turns to cut context accumulation.`,
+      d:`${bash} Bash calls. Chain commands in one call instead of separate turns.`,
       b:`${bash} bash calls`,bc:'bdr-y'});
 
   if (!habits.length)
@@ -580,36 +843,269 @@ function buildTools() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SESSIONS
+// MODELS
 // ─────────────────────────────────────────────────────────────────────────────
-function buildSessions() {
-  $('panel-sessions').innerHTML = `
+function buildModels() {
+  const mb = D.modelBreakdown || [];
+  const el = $('panel-models');
+  if (!mb.length) {
+    el.innerHTML = `<div class="pg-hdr"><div class="pg-title">Model Split</div></div><div style="color:var(--mut)">No model data yet.</div>`;
+    return;
+  }
+
+  const totalCost   = mb.reduce((s, m) => s + m.cost, 0);
+  const totalTokens = mb.reduce((s, m) => s + m.inputTokens + m.outputTokens, 0);
+  const maxCost = mb[0]?.cost || 0.001;
+
+  el.innerHTML = `
     <div class="pg-hdr">
-      <div class="pg-title">Sessions</div>
-      <div class="pg-sub">Most recent first · ${D.sessions.length} total</div>
+      <div class="pg-title">Model Split</div>
+      <div class="pg-sub">Cost and usage breakdown by model</div>
     </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-ttl">Cost by model</div>
+        <div class="donut-row">
+          <div class="donut-wrap">
+            <canvas id="modelDonut" width="152" height="152"></canvas>
+            <div class="donut-ctr">
+              <div class="donut-main">${fmtC(totalCost)}</div>
+              <div class="donut-sub">total</div>
+            </div>
+          </div>
+          <div class="leg" id="modelDonutLeg"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-ttl">Cost ranking</div>
+        <div class="bar-chart">
+          ${mb.map(m => `
+            <div class="bar-row br3">
+              <div class="blbl" style="color:${modelColor(m.model)}">${modelLabel(m.model)}</div>
+              <div class="btrk"><div class="bfil" style="width:${(m.cost/maxCost*100).toFixed(0)}%;background:${modelColor(m.model)}"></div></div>
+              <div class="bval tc">${fmtC(m.cost)}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
     <div class="card">
+      <div class="card-ttl">Per-model breakdown</div>
       <table class="tbl">
         <thead><tr>
-          <th>Date</th><th>Project</th><th>ID</th>
-          <th>Prompts</th><th>Input</th><th>Output</th><th>Cache Rd</th><th>Cost</th><th>Via</th>
+          <th>Model</th><th>Queries</th><th>Input Tokens</th><th>Output Tokens</th><th>Cost</th><th>Cost %</th><th>$/query</th>
         </tr></thead>
         <tbody>
-          ${D.sessions.map(s=>`<tr>
-            <td>${fmtD(s.firstTs)}</td>
-            <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--acc3)">${s.project}</td>
-            <td style="color:var(--mut)">${s.id.slice(0,8)}…</td>
-            <td>${s.prompts}</td>
-            <td>${fmt(s.inputTokens)}</td>
-            <td>${fmt(s.outputTokens)}</td>
-            <td class="cc">${fmt(s.cacheRead)}</td>
-            <td class="tc">${fmtC(s.cost)}</td>
-            <td style="color:var(--mut)">${s.entrypoint||'—'}</td>
+          ${mb.map(m => `<tr>
+            <td style="color:${modelColor(m.model)}">${m.model}</td>
+            <td>${m.queryCount}</td>
+            <td>${fmt(m.inputTokens)}</td>
+            <td>${fmt(m.outputTokens)}</td>
+            <td class="tc">${fmtC(m.cost)}</td>
+            <td>${totalCost > 0 ? (m.cost/totalCost*100).toFixed(1) : 0}%</td>
+            <td class="tc">${m.queryCount > 0 ? fmtC(m.cost/m.queryCount) : '—'}</td>
           </tr>`).join('')}
         </tbody>
       </table>
     </div>
   `;
+}
+
+function drawModelDonut() {
+  const canvas = $('modelDonut');
+  if (!canvas) return;
+  const mb = D.modelBreakdown || [];
+  if (!mb.length) return;
+
+  const ctx = canvas.getContext('2d');
+  const W = 152, H = 152;
+  canvas.width = W; canvas.height = H;
+
+  const total = mb.reduce((s, m) => s + m.cost, 0);
+  if (!total) return;
+
+  let start = -Math.PI / 2;
+  const cx = W/2, cy = H/2, r = 64, ir = 42;
+
+  for (const m of mb) {
+    if (!m.cost) continue;
+    const angle = (m.cost / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + angle);
+    ctx.closePath();
+    ctx.fillStyle = modelColor(m.model);
+    ctx.fill();
+    start += angle;
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, ir, 0, Math.PI * 2);
+  ctx.fillStyle = '#161616';
+  ctx.fill();
+
+  const leg = $('modelDonutLeg');
+  if (leg) {
+    leg.innerHTML = mb.map(m => `
+      <div class="leg-i">
+        <div class="leg-d" style="background:${modelColor(m.model)}"></div>
+        <div class="leg-n">${modelLabel(m.model)}</div>
+        <div class="leg-v">${fmtC(m.cost)} (${total ? (m.cost/total*100).toFixed(0) : 0}%)</div>
+      </div>`).join('');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOP PROMPTS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildTopPrompts() {
+  const prompts = D.topPrompts || [];
+  const el = $('panel-topPrompts');
+  if (!prompts.length) {
+    el.innerHTML = `<div class="pg-hdr"><div class="pg-title">Top Prompts</div></div><div style="color:var(--mut)">No prompt data yet.</div>`;
+    return;
+  }
+
+  const maxCost = prompts[0]?.cost || 0.001;
+
+  el.innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Top 20 Most Expensive Prompts</div>
+      <div class="pg-sub">Individual queries ranked by total cost (input + output + cache)</div>
+    </div>
+    <div class="card">
+      ${prompts.map((p, i) => {
+        const total = p.inputTokens + p.outputTokens + p.cacheWrite + p.cacheRead;
+        return `
+        <div class="prompt-row">
+          <div class="prompt-rank">#${i+1} · ${p.date||'?'} · ${p.project} · <span style="color:${modelColor(p.model)}">${modelLabel(p.model)}</span></div>
+          <div class="prompt-text">${escHtml(p.prompt)}</div>
+          <div class="prompt-bars">
+            <div class="prompt-lbl">Input</div>
+            <div class="btrk" style="height:4px"><div class="bfil" style="width:${(p.inputTokens/Math.max(total,1)*100).toFixed(0)}%;background:var(--acc)"></div></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut);text-align:right">${fmt(p.inputTokens)}</div>
+          </div>
+          <div class="prompt-bars">
+            <div class="prompt-lbl">Output</div>
+            <div class="btrk" style="height:4px"><div class="bfil" style="width:${(p.outputTokens/Math.max(total,1)*100).toFixed(0)}%;background:var(--acc4)"></div></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut);text-align:right">${fmt(p.outputTokens)}</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+            <div>
+              <div class="btrk" style="height:3px;width:${(p.cost/maxCost*100).toFixed(0)}%;max-width:200px"><div class="bfil" style="width:100%;background:var(--acc2)"></div></div>
+            </div>
+            <div class="prompt-cost">${fmtC(p.cost)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  if (!s) return '(no prompt text)';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SESSIONS (with drill-down)
+// ─────────────────────────────────────────────────────────────────────────────
+function buildSessions() {
+  $('panel-sessions').innerHTML = `
+    <div class="pg-hdr">
+      <div class="pg-title">Sessions</div>
+      <div class="pg-sub">Most recent first · ${D.sessions.length} total · click a row to drill down</div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr>
+          <th>Date</th><th>Project</th><th>Model</th>
+          <th>Turns</th><th>Input</th><th>Output</th><th>Cache Rd</th><th>Cost</th>
+        </tr></thead>
+        <tbody>
+          ${D.sessions.map((s,i)=>`<tr class="clickable" onclick="showDrilldown(${i})">
+            <td>${fmtD(s.firstTs)}</td>
+            <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--acc3)">${s.project}</td>
+            <td style="color:${modelColor(s.model)}">${modelLabel(s.model)}</td>
+            <td>${s.queries ? s.queries.length : s.prompts}</td>
+            <td>${fmt(s.inputTokens)}</td>
+            <td>${fmt(s.outputTokens)}</td>
+            <td class="cc">${fmt(s.cacheRead)}</td>
+            <td class="tc">${fmtC(s.cost)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function showDrilldown(idx) {
+  const s = D.sessions[idx];
+  if (!s) return;
+
+  const queries = s.queries || [];
+  const maxCost = Math.max(...queries.map(q => q.cost), 0.001);
+
+  // Per-turn cost bar chart data
+  const chartRows = queries.map((q, i) => {
+    const w = Math.max(2, (q.cost / maxCost * 100)).toFixed(0);
+    const color = modelColor(q.model);
+    return `<div style="display:grid;grid-template-columns:24px 1fr 55px;gap:6px;align-items:center;margin-bottom:2px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut);text-align:right">${i+1}</div>
+      <div class="btrk" style="height:10px"><div class="bfil" style="width:${w}%;background:${color}"></div></div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;text-align:right;color:${q.cost > maxCost*0.5 ? 'var(--acc2)' : 'var(--mut)'}">${fmtC(q.cost)}</div>
+    </div>`;
+  }).join('');
+
+  // Turn list
+  const turnRows = queries.map((q, i) => `
+    <div class="turn-row">
+      <div class="turn-num">${i+1}</div>
+      <div class="turn-prompt ${q.hasPrompt ? 'has-p' : ''}">${q.hasPrompt ? '● user' : '○ tool'}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut);text-align:center">${fmt(q.inputTokens+q.outputTokens)}</div>
+      <div class="turn-cost" style="color:${q.cost > maxCost*0.3 ? 'var(--acc2)' : 'var(--mut)'}">${fmtC(q.cost)}</div>
+      <div class="turn-tools">${q.toolCount > 0 ? q.toolCount+'🔧' : ''}</div>
+    </div>`).join('');
+
+  const totalTurns = queries.length;
+  const userTurns  = queries.filter(q => q.hasPrompt).length;
+
+  $('modalContent').innerHTML = `
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">${s.project} · ${fmtDFull(s.firstTs)}</div>
+        <div class="modal-sub">${totalTurns} turns (${userTurns} user messages) · <span style="color:${modelColor(s.model)}">${s.model || '?'}</span> · ${fmtC(s.cost)}</div>
+        ${s.firstPrompt ? `<div style="font-size:11px;color:var(--mut);margin-top:5px;font-style:italic">"${escHtml(s.firstPrompt.slice(0,120))}${s.firstPrompt.length > 120 ? '…' : ''}"</div>` : ''}
+      </div>
+      <button class="close-btn" onclick="closeOverlay()">✕ close</button>
+    </div>
+
+    <div class="kpi-row c4" style="margin-bottom:14px">
+      <div class="kpi ky"><div class="kpi-lbl">Cost</div><div class="kpi-val">${fmtC(s.cost)}</div></div>
+      <div class="kpi ko"><div class="kpi-lbl">Input</div><div class="kpi-val">${fmt(s.inputTokens)}</div></div>
+      <div class="kpi kb"><div class="kpi-lbl">Cache Read</div><div class="kpi-val">${fmt(s.cacheRead)}</div></div>
+      <div class="kpi kp"><div class="kpi-lbl">Output</div><div class="kpi-val">${fmt(s.outputTokens)}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">Cost per turn — bar chart</div>
+      <div style="max-height:220px;overflow-y:auto;padding-right:4px">${chartRows}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-ttl">Turn list</div>
+      <div style="display:grid;grid-template-columns:28px 1fr 70px 55px 40px;gap:8px;padding:3px 6px;margin-bottom:4px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut2)">#</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut2)">Type</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut2);text-align:center">Tokens</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut2);text-align:right">Cost</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut2);text-align:right">Tools</div>
+      </div>
+      <div class="turn-list">${turnRows}</div>
+    </div>
+  `;
+
+  $('overlay').classList.add('on');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -625,7 +1121,7 @@ function buildTips() {
       b:'Output tokens cost 5× more. Prefix prompts with "be concise", "just the code", or "no explanation needed". Add a global brevity rule to your CLAUDE.md.',
       s:`~${Math.min((outR*.5*100).toFixed(0),40)}% output cost`},
     {n:'02',c:'o',t:'Use offset+limit for large files',
-      b:'Reading a 900-line file costs ~9× more than reading lines 1–100. Pass offset and limit. Ask Claude to grep/search first to find the exact section it needs.',
+      b:'Reading a 900-line file costs ~9× more than reading lines 1–100. Pass offset and limit. Ask Claude to grep/search first to find the exact section.',
       s:reads>10?'~20% from read savings':'Important as files grow'},
     {n:'03',c:'b',t:'Batch Bash commands',
       b:'"ls && cat file && git status" in one call vs three separate turns. Each turn re-sends the full growing context. Batching reduces both turn count and accumulation.',
@@ -639,9 +1135,9 @@ function buildTips() {
     {n:'06',c:'o',t:'Bundle UI feedback into one prompt',
       b:'Instead of 6 separate "make button smaller", "change this color" messages — list all changes in one prompt. Each turn bills the entire context window again.',
       s:'Dramatically fewer turns'},
-    {n:'07',c:'b',t:'Disable extended thinking for simple tasks',
-      b:'Thinking blocks are billed at output rates ($15/M). Only enable for hard reasoning. For UI tweaks, file edits, and routine coding it is overkill.',
-      s:'Up to 50% on affected turns'},
+    {n:'07',c:'b',t:'Use Sonnet for simple tasks',
+      b:'Opus costs 5× more than Sonnet per token. For quick questions, file edits, and routine coding, Sonnet gives similar results. Use /model to switch.',
+      s:'Up to 5× on affected sessions'},
     {n:'08',c:'p',t:'Do not re-read files already in context',
       b:'If Claude read a file this session, refer to it by name. Only re-read after you change it. Redundant reads are pure waste — the content is already there.',
       s:'Eliminates redundant injection'},
@@ -740,11 +1236,12 @@ function drawDonut(id, t, legId) {
 }
 
 function buildCostType(id, t) {
+  // Use Sonnet rates as blended estimate for breakdown display
   const rows = [
-    {label:'Output',      cost:(t.output/1e6)*PRICE.output,           color:'var(--acc4)'},
-    {label:'Input',       cost:(t.input/1e6)*PRICE.input,             color:'var(--acc)'},
-    {label:'Cache Write', cost:(t.cache_write/1e6)*PRICE.cache_write,  color:'var(--acc2)'},
-    {label:'Cache Read',  cost:(t.cache_read/1e6)*PRICE.cache_read,    color:'var(--acc3)'},
+    {label:'Output',      cost:(t.output/1e6)*15,           color:'var(--acc4)'},
+    {label:'Input',       cost:(t.input/1e6)*3,             color:'var(--acc)'},
+    {label:'Cache Write', cost:(t.cache_write/1e6)*3.75,    color:'var(--acc2)'},
+    {label:'Cache Read',  cost:(t.cache_read/1e6)*0.30,     color:'var(--acc3)'},
   ].sort((a,b)=>b.cost-a.cost);
   const max = rows[0].cost || 0.001;
   $(id).innerHTML = `<div class="bar-chart">${rows.map(r=>`
@@ -770,7 +1267,6 @@ function drawLine(id, weeks, acc, color, labelFmt) {
   const cw   = W - pad.l - pad.r;
   const ch   = H - pad.t - pad.b;
 
-  // Grid
   ctx.strokeStyle = '#252525'; ctx.lineWidth = 1;
   [0, .5, 1].forEach(f => {
     const y = pad.t + ch*(1-f);
@@ -782,7 +1278,6 @@ function drawLine(id, weeks, acc, color, labelFmt) {
 
   if (weeks.length < 2) return;
 
-  // Area fill
   ctx.save(); ctx.globalAlpha=0.09; ctx.fillStyle=color;
   ctx.beginPath();
   weeks.forEach((w,i) => {
@@ -794,7 +1289,6 @@ function drawLine(id, weeks, acc, color, labelFmt) {
   ctx.lineTo(pad.l, pad.t+ch);
   ctx.closePath(); ctx.fill(); ctx.restore();
 
-  // Line
   ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineJoin='round';
   ctx.beginPath();
   weeks.forEach((w,i) => {
@@ -804,7 +1298,6 @@ function drawLine(id, weeks, acc, color, labelFmt) {
   });
   ctx.stroke();
 
-  // Dots + x-labels
   weeks.forEach((w,i) => {
     const x = pad.l + (i/(weeks.length-1))*cw;
     const y = pad.t + ch*(1-(vals[i]-min)/(maxV-min));
@@ -819,7 +1312,7 @@ function drawLine(id, weeks, acc, color, labelFmt) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BOOT — redraw canvases when Trend panel becomes visible
+// BOOT
 // ─────────────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.nav-item').forEach(el => {
   el.onclick = () => {
@@ -830,7 +1323,9 @@ document.querySelectorAll('.nav-item').forEach(el => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
     const pnl = $('panel-'+el.dataset.p);
     if (pnl) pnl.classList.add('on');
-    if (el.dataset.p === 'trend') setTimeout(drawTrends, 40);
+    if (el.dataset.p === 'trend')  setTimeout(drawTrends, 40);
+    if (el.dataset.p === 'daily')  setTimeout(drawDailyChart, 40);
+    if (el.dataset.p === 'models') setTimeout(drawModelDonut, 40);
   };
 });
 

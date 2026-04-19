@@ -8,3 +8,5 @@ session_*.md
 usage_analysis_*.md
 
 .DS_Store
+
+archive/
