@@ -588,7 +588,7 @@ function buildPayload() {
     flush();
   }
   allPrompts.sort((a, b) => b.cost - a.cost);
-  const topPrompts = allPrompts.slice(0, 20);
+  const topPrompts = allPrompts.slice(0, 500);
 
   // Insights
   const totalTokens    = totals.input + totals.output + totals.cache_write + totals.cache_read;
