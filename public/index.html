@@ -31,10 +31,9 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 26px;border-bottom:1px solid var(--bdr);background:var(--surf);position:sticky;top:0;z-index:100}
 .logo{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--acc);letter-spacing:.05em}
 .logo span{color:var(--mut);font-weight:400}
-.hdr-r{display:flex;align-items:center;gap:14px}
-.hdr-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut)}
-.rbtn{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;padding:5px 13px;background:transparent;border:1px solid var(--bdr2);color:var(--mut);border-radius:2px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.hdr-r{display:flex;align-items:center;gap:14px}.rbtn{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;padding:5px 13px;background:transparent;border:1px solid var(--bdr2);color:var(--mut);border-radius:2px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
 .rbtn:hover{border-color:var(--acc);color:var(--acc)}
+.rbtn.active{border-color:var(--acc2);color:var(--acc2);background:rgba(74,222,128,.08)}
 
 .shell{display:grid;grid-template-columns:196px 1fr;min-height:calc(100vh - 49px)}
 
@@ -210,7 +209,6 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 <header class="hdr">
   <div class="logo">claude<span>/</span>token-analyzer</div>
   <div class="hdr-r">
-    <div class="hdr-meta" id="hdrMeta">connecting…</div>
     <button class="rbtn" onclick="loadData()">↻ Refresh</button>
   </div>
 </header>
@@ -325,9 +323,6 @@ async function loadData() {
 function renderAll() {
   const t = D.totals;
   const total = t.input + t.output + t.cache_write + t.cache_read;
-  $('hdrMeta').textContent =
-    `${D.sessions.length} sessions · ${fmt(total)} tokens · ${fmtC(D.totalCost)} · ${D.filesScanned} files`;
-
   $('content').innerHTML = `
     <div class="panel on"  id="panel-overview"></div>
     <div class="panel"     id="panel-daily"></div>
@@ -513,7 +508,6 @@ function buildDaily() {
   el.innerHTML = `
     <div class="pg-hdr">
       <div class="pg-title">Token Usage</div>
-      <div class="pg-sub">5 metrics per day · last ${shown.length} days</div>
     </div>
 
     <div class="card">
@@ -729,27 +723,63 @@ function drawTrends() {
 // ─────────────────────────────────────────────────────────────────────────────
 // PROJECTS
 // ─────────────────────────────────────────────────────────────────────────────
+let projectDateFilter = 0;
+
+function buildProjectsFiltered(days) {
+  const cutoff = days > 0 ? new Date(Date.now() - days * 864e5) : null;
+  const sessions = cutoff
+    ? D.sessions.filter(s => s.firstTs && new Date(s.firstTs) >= cutoff)
+    : D.sessions;
+  const map = {};
+  for (const s of sessions) {
+    const key = s.project || '(root)';
+    if (!map[key]) map[key] = { project: key, cost: 0, sessions: 0, input: 0, output: 0, cache_write: 0, cache_read: 0 };
+    map[key].cost        += s.cost        || 0;
+    map[key].sessions    += 1;
+    map[key].input       += s.input       || 0;
+    map[key].output      += s.output      || 0;
+    map[key].cache_write += s.cache_write || 0;
+    map[key].cache_read  += s.cache_read  || 0;
+  }
+  return Object.values(map).sort((a, b) => b.cost - a.cost);
+}
+
+function setProjectFilter(days) {
+  projectDateFilter = days;
+  const ps = buildProjectsFiltered(days);
+  const labels = { 0: 'All', 7: '7d', 30: '30d', 90: '90d' };
+  document.querySelectorAll('.proj-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', +btn.dataset.days === days);
+  });
+  $('proj-cards').innerHTML = ps.map(p => {
+    const tot = p.input + p.output + p.cache_write + p.cache_read;
+    const hit = tot > 0 ? (p.cache_read / tot * 100).toFixed(0) : 0;
+    const out = (p.input + p.output) > 0 ? (p.output / (p.input + p.output) * 100).toFixed(0) : 0;
+    return `<div class="card">
+      <div class="card-ttl">${p.project || '(root)'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--acc2)">${fmtC(p.cost)}</div><div style="font-size:10px;color:var(--mut)">cost</div></div>
+        <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600">${p.sessions}</div><div style="font-size:10px;color:var(--mut)">sessions</div></div>
+        <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--acc3)">${hit}%</div><div style="font-size:10px;color:var(--mut)">cache hit</div></div>
+        <div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--acc4)">${out}%</div><div style="font-size:10px;color:var(--mut)">out ratio</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function buildProjects() {
-  const ps = D.byProject;
-  const maxC = ps[0]?.cost || 0.001;
+  const ps = buildProjectsFiltered(projectDateFilter);
   $('panel-projects').innerHTML = `
     <div class="pg-hdr">
       <div class="pg-title">By Project</div>
       <div class="pg-sub">Token spend per project folder</div>
-    </div>
-    <div class="card">
-      <div class="card-ttl">Cost per project</div>
-      <div class="bar-chart">
-        ${ps.map(p=>`
-          <div class="bar-row br4">
-            <div class="blbl" title="${p.project}">${p.project||'(root)'}</div>
-            <div class="btrk"><div class="bfil" style="width:${(p.cost/maxC*100).toFixed(0)}%;background:var(--acc2)"></div></div>
-            <div class="bval tc">${fmtC(p.cost)}</div>
-            <div class="bval2">${p.sessions}s</div>
-          </div>`).join('')}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        ${[['All',0],['7d',7],['30d',30],['90d',90]].map(([lbl,d])=>`
+          <button class="rbtn proj-filter-btn${projectDateFilter===d?' active':''}" data-days="${d}" onclick="setProjectFilter(${d})">${lbl}</button>
+        `).join('')}
       </div>
     </div>
-    <div class="two-col">
+    <div class="two-col" id="proj-cards">
       ${ps.map(p=>{
         const tot = p.input+p.output+p.cache_write+p.cache_read;
         const hit = tot>0?(p.cache_read/tot*100).toFixed(0):0;
