@@ -184,6 +184,19 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
 
 .up{color:var(--red)}.dn{color:var(--green)}.fl{color:var(--mut)}
+
+/* Session filter bar */
+.sess-filter-bar{display:flex;align-items:flex-end;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.filter-group{display:flex;flex-direction:column;gap:3px}
+.filter-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)}
+.filter-input{font-family:'IBM Plex Mono',monospace;font-size:10px;background:transparent;border:1px solid var(--bdr2);color:var(--txt);border-radius:2px;padding:5px 8px;cursor:pointer;outline:none;color-scheme:dark}
+.filter-input:focus{border-color:var(--acc)}
+.sess-clear-btn{display:none}
+.proj-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:var(--surf);border:1px solid var(--bdr2);border-radius:2px;padding:8px 0;min-width:180px;max-height:240px;overflow-y:auto}
+.proj-dropdown.open{display:block}
+.proj-check-lbl{display:flex;align-items:center;gap:7px;padding:5px 12px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut);transition:background .1s}
+.proj-check-lbl:hover{background:var(--surf2);color:var(--txt)}
+.proj-check{accent-color:var(--acc);cursor:pointer}
 </style>
 </head>
 <body>
@@ -1010,11 +1023,31 @@ function escHtml(s) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SESSIONS (with drill-down)
 // ─────────────────────────────────────────────────────────────────────────────
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
 function buildSessions() {
   $('panel-sessions').innerHTML = `
     <div class="pg-hdr">
       <div class="pg-title">Sessions</div>
       <div class="pg-sub">Most recent first · ${D.sessions.length} total · click a row to drill down</div>
+    </div>
+    <div class="sess-filter-bar">
+      <div class="filter-group">
+        <label class="filter-lbl">From</label>
+        <input type="date" id="sess-date-start" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label class="filter-lbl">To</label>
+        <input type="date" id="sess-date-end" class="filter-input">
+      </div>
+      <div style="position:relative">
+        <button class="rbtn" id="sess-proj-btn" onclick="toggleProjDropdown(event)">Projects ▾</button>
+        <div class="proj-dropdown" id="sess-proj-dropdown"></div>
+      </div>
+      <button class="rbtn sess-clear-btn" id="sess-clear-btn" onclick="clearSessionFilters()">Clear filters</button>
     </div>
     <div class="card">
       <table class="tbl">
@@ -1022,22 +1055,94 @@ function buildSessions() {
           <th>Date</th><th>Project</th><th>Model</th>
           <th>Turns</th><th>Input</th><th>Output</th><th>Cache Rd</th><th>Cost</th>
         </tr></thead>
-        <tbody>
-          ${D.sessions.map((s,i)=>`<tr class="clickable" onclick="showDrilldown(${i})">
-            <td>${fmtD(s.firstTs)}</td>
-            <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--acc3)">${s.project}</td>
-            <td style="color:${modelColor(s.model)}">${modelLabel(s.model)}</td>
-            <td>${s.queries ? s.queries.length : s.prompts}</td>
-            <td>${fmt(s.inputTokens)}</td>
-            <td>${fmt(s.outputTokens)}</td>
-            <td class="cc">${fmt(s.cacheRead)}</td>
-            <td class="tc">${fmtC(s.cost)}</td>
-          </tr>`).join('')}
-        </tbody>
+        <tbody id="sess-tbody"></tbody>
       </table>
     </div>
   `;
+
+  const projects = [...new Set(D.sessions.map(s => s.project || '(root)'))].sort((a, b) => a.localeCompare(b));
+  $('sess-proj-dropdown').innerHTML = projects.map(p =>
+    `<label class="proj-check-lbl"><input type="checkbox" class="proj-check" value="${p.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onchange="applySessionFilters()"><span>${p.replace(/&/g,'&amp;')}</span></label>`
+  ).join('');
+
+  const debouncedApply = debounce(applySessionFilters, 150);
+  $('sess-date-start').addEventListener('input', debouncedApply);
+  $('sess-date-end').addEventListener('input', debouncedApply);
+
+  renderSessionsTable(D.sessions);
 }
+
+function renderSessionsTable(sessions) {
+  const tbody = $('sess-tbody');
+  if (!sessions.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--mut);padding:24px 9px;font-style:italic">No sessions match the current filters</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = sessions.map(s => {
+    const origIdx = D.sessions.indexOf(s);
+    return `<tr class="clickable" onclick="showDrilldown(${origIdx})">
+      <td>${fmtD(s.firstTs)}</td>
+      <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--acc3)">${s.project}</td>
+      <td style="color:${modelColor(s.model)}">${modelLabel(s.model)}</td>
+      <td>${s.queries ? s.queries.length : s.prompts}</td>
+      <td>${fmt(s.inputTokens)}</td>
+      <td>${fmt(s.outputTokens)}</td>
+      <td class="cc">${fmt(s.cacheRead)}</td>
+      <td class="tc">${fmtC(s.cost)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function applySessionFilters() {
+  const startVal = ($('sess-date-start') || {}).value || '';
+  const endVal   = ($('sess-date-end')   || {}).value || '';
+  const checked  = [...document.querySelectorAll('.proj-check:checked')].map(cb => cb.value);
+
+  let filtered = D.sessions;
+
+  if (startVal && endVal && startVal > endVal) {
+    filtered = [];
+  } else {
+    if (startVal) {
+      const start = new Date(startVal + 'T00:00:00');
+      filtered = filtered.filter(s => s.firstTs && new Date(s.firstTs) >= start);
+    }
+    if (endVal) {
+      const end = new Date(endVal + 'T23:59:59');
+      filtered = filtered.filter(s => s.firstTs && new Date(s.firstTs) <= end);
+    }
+  }
+
+  if (checked.length > 0) {
+    filtered = filtered.filter(s => checked.includes(s.project || '(root)'));
+  }
+
+  const clearBtn = $('sess-clear-btn');
+  if (clearBtn) clearBtn.style.display = (startVal || endVal || checked.length) ? '' : 'none';
+
+  renderSessionsTable(filtered);
+}
+
+function toggleProjDropdown(e) {
+  e.stopPropagation();
+  $('sess-proj-dropdown').classList.toggle('open');
+}
+
+function clearSessionFilters() {
+  $('sess-date-start').value = '';
+  $('sess-date-end').value = '';
+  document.querySelectorAll('.proj-check').forEach(cb => cb.checked = false);
+  $('sess-clear-btn').style.display = 'none';
+  renderSessionsTable(D.sessions);
+}
+
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('sess-proj-dropdown');
+  const btn = document.getElementById('sess-proj-btn');
+  if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+    dd.classList.remove('open');
+  }
+});
 
 function showDrilldown(idx) {
   const s = D.sessions[idx];

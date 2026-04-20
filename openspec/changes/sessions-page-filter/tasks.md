@@ -1,36 +1,36 @@
 ## 1. Filter Bar HTML
 
-- [ ] 1.1 Add filter bar container above the sessions table in the Sessions panel with start-date, end-date inputs and a project filter button
-- [ ] 1.2 Add "Clear filters" button (hidden by default via CSS) inside the filter bar
-- [ ] 1.3 Add empty-state row in the sessions table body for the "No sessions match" message (hidden by default)
+- [x] 1.1 Add filter bar container above the sessions table in the Sessions panel with start-date, end-date inputs and a project filter button
+- [x] 1.2 Add "Clear filters" button (hidden by default via CSS) inside the filter bar
+- [x] 1.3 Add empty-state row in the sessions table body for the "No sessions match" message (hidden by default)
 
 ## 2. Project Dropdown Checklist
 
-- [ ] 2.1 Add a floating dropdown panel (hidden by default) anchored to the project filter button, containing dynamically generated checkboxes
-- [ ] 2.2 Implement toggle logic: clicking the button opens/closes the dropdown; clicking outside closes it
-- [ ] 2.3 Populate project checkboxes at render time from distinct, alphabetically sorted project names in the session data
+- [x] 2.1 Add a floating dropdown panel (hidden by default) anchored to the project filter button, containing dynamically generated checkboxes
+- [x] 2.2 Implement toggle logic: clicking the button opens/closes the dropdown; clicking outside closes it
+- [x] 2.3 Populate project checkboxes at render time from distinct, alphabetically sorted project names in the session data
 
 ## 3. Core Filter Logic
 
-- [ ] 3.1 Implement `applySessionFilters()` function that reads current filter state (start date, end date, selected projects) and filters the master sessions array
-- [ ] 3.2 Apply logical AND between date range and project filters as per spec
-- [ ] 3.3 Handle edge cases: start-after-end shows zero rows; empty project selection = all projects shown
-- [ ] 3.4 Debounce date input events by 150 ms to avoid jank on rapid typing
+- [x] 3.1 Implement `applySessionFilters()` function that reads current filter state (start date, end date, selected projects) and filters the master sessions array
+- [x] 3.2 Apply logical AND between date range and project filters as per spec
+- [x] 3.3 Handle edge cases: start-after-end shows zero rows; empty project selection = all projects shown
+- [x] 3.4 Debounce date input events by 150 ms to avoid jank on rapid typing
 
 ## 4. Table Re-render
 
-- [ ] 4.1 Implement `renderSessionsTable(filteredSessions)` that re-draws only the sessions tbody rows from a given array
-- [ ] 4.2 Show the empty-state message row when `filteredSessions` is empty; hide it otherwise
+- [x] 4.1 Implement `renderSessionsTable(filteredSessions)` that re-draws only the sessions tbody rows from a given array
+- [x] 4.2 Show the empty-state message row when `filteredSessions` is empty; hide it otherwise
 
 ## 5. Clear Filters & Active State
 
-- [ ] 5.1 Show "Clear filters" button whenever any filter is active (at least one date set or at least one project checked)
-- [ ] 5.2 Wire "Clear filters" click handler to reset all inputs/checkboxes and re-run `applySessionFilters()`
+- [x] 5.1 Show "Clear filters" button whenever any filter is active (at least one date set or at least one project checked)
+- [x] 5.2 Wire "Clear filters" click handler to reset all inputs/checkboxes and re-run `applySessionFilters()`
 
 ## 6. Styling
 
-- [ ] 6.1 Style the filter bar and dropdown checklist using existing CSS variables to match dashboard look and feel
-- [ ] 6.2 Cap dropdown checklist height with `max-height` + `overflow-y: auto` for long project lists
+- [x] 6.1 Style the filter bar and dropdown checklist using existing CSS variables to match dashboard look and feel
+- [x] 6.2 Cap dropdown checklist height with `max-height` + `overflow-y: auto` for long project lists
 
 ## 7. Verification
 
