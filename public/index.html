@@ -97,6 +97,12 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 .htt{font-weight:600;font-size:12px;color:var(--txt);margin-bottom:3px}
 .hds{font-size:11px;color:var(--mut);line-height:1.55}
 .hbdg{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:2px 7px;border-radius:1px;white-space:nowrap}
+.hexp{font-size:10px;color:var(--mut2);margin-top:5px;line-height:1.4}
+.habit-chart{width:100%;display:block;margin-top:8px}
+.habit-chart-empty{font-size:10px;color:var(--mut2);margin-top:8px;font-style:italic}
+.habit-filter-row{display:flex;align-items:center;gap:7px;margin-top:8px}
+.habit-filter-row label{font-size:10px;color:var(--mut)}
+.habit-filter-row select{background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);font-size:10px;padding:2px 6px;border-radius:2px;cursor:pointer}
 .bdr-r{background:rgba(255,71,71,.12);color:var(--red)}.bdr-y{background:rgba(255,204,0,.12);color:var(--yel)}
 .bdr-b{background:rgba(71,212,255,.12);color:var(--acc3)}.bdr-g{background:rgba(71,255,138,.12);color:var(--green)}
 
@@ -249,6 +255,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 <script>
 let D = null;
 let activePanel = 'overview';
+let habitWeeks = 6;
 
 const $  = id => document.getElementById(id);
 const qs = s  => document.querySelector(s);
@@ -359,6 +366,7 @@ function renderAll() {
       if (el.dataset.p === 'trend')  setTimeout(drawTrends, 40);
       if (el.dataset.p === 'daily')  { setTimeout(drawDailyChart, 40); setTimeout(drawWeeklyTokenChart, 40); }
       if (el.dataset.p === 'models') setTimeout(drawModelDonut, 40);
+      if (el.dataset.p === 'habits') setTimeout(buildHabits, 40);
     };
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
@@ -817,85 +825,191 @@ function buildInsights() {
 // HABITS (client-computed heuristics)
 // ─────────────────────────────────────────────────────────────────────────────
 function buildHabits() {
-  const t = D.totals;
-  const sessions = D.sessions;
-  const weeks = D.weeklyTrend;
+  // Date filter — compute cutoff
+  const now = new Date();
+  let filteredSessions = D.sessions;
+  let filteredLargeReads = D.largeReads;
+  if (habitWeeks) {
+    const cutoff = new Date(now.getTime() - habitWeeks * 7 * 86400000);
+    filteredSessions   = D.sessions.filter(s => s.firstTs && new Date(s.firstTs) >= cutoff);
+    filteredLargeReads = D.largeReads.filter(r => r.timestamp && new Date(r.timestamp) >= cutoff);
+  }
 
-  const avgIn = sessions.length>0 ? sessions.reduce((a,s)=>a+s.inputTokens,0)/sessions.length : 0;
-  const totalReads = (D.toolCounts['Read']||0)+(D.toolCounts['View']||0);
-  const denom = t.input+t.cache_write+t.cache_read;
-  const cacheHit = denom>0 ? t.cache_read/denom : 0;
-  const outRatio = (t.input+t.output)>0 ? t.output/(t.input+t.output) : 0;
-  const errReads = D.largeReads.filter(r=>r.error).length;
-  const bash = D.toolCounts['Bash']||0;
+  // Weekly buckets from filtered sessions
+  const wkMap = {};
+  for (const s of filteredSessions) {
+    if (!s.firstTs) continue;
+    const dt  = new Date(s.firstTs);
+    const day = (dt.getDay() + 6) % 7;
+    const mon = new Date(dt);
+    mon.setDate(dt.getDate() - day);
+    const key = mon.toISOString().slice(0, 10);
+    if (!wkMap[key]) wkMap[key] = { week: key, cost: 0, input: 0, cacheRead: 0, cacheWrite: 0, output: 0, count: 0, toolCalls: 0 };
+    wkMap[key].cost      += s.cost        || 0;
+    wkMap[key].input     += s.inputTokens || 0;
+    wkMap[key].cacheRead += s.cacheRead   || 0;
+    wkMap[key].cacheWrite+= s.cacheWrite  || 0;
+    wkMap[key].output    += s.outputTokens|| 0;
+    wkMap[key].count     += 1;
+    wkMap[key].toolCalls += s.toolCalls   || 0;
+  }
+  const wkData = Object.values(wkMap).sort((a, b) => a.week.localeCompare(b.week));
+  for (const w of wkData) {
+    const den = w.input + w.cacheWrite + w.cacheRead;
+    w.cacheHitPct = den > 0 ? Math.round(w.cacheRead / den * 100) : 0;
+    w.outputRatio = (w.input + w.output) > 0 ? Math.round(w.output / (w.input + w.output) * 100) : 0;
+    w.avgInput    = w.count > 0 ? Math.round(w.input / w.count) : 0;
+  }
+
+  // Metrics from filtered data
+  const avgIn = filteredSessions.length > 0
+    ? filteredSessions.reduce((a, s) => a + s.inputTokens, 0) / filteredSessions.length : 0;
+  const fIn   = filteredSessions.reduce((a, s) => a + (s.inputTokens || 0), 0);
+  const fCW   = filteredSessions.reduce((a, s) => a + (s.cacheWrite  || 0), 0);
+  const fCR   = filteredSessions.reduce((a, s) => a + (s.cacheRead   || 0), 0);
+  const fOut  = filteredSessions.reduce((a, s) => a + (s.outputTokens|| 0), 0);
+  const den   = fIn + fCW + fCR;
+  const cacheHit = den > 0 ? fCR / den : 0;
+  const outRatio = (fIn + fOut) > 0 ? fOut / (fIn + fOut) : 0;
+  const errReads = filteredLargeReads.filter(r => r.error).length;
+  // Tool-name breakdown not available per session; scale global counts proportionally
+  const scaleFactor = D.sessions.length ? filteredSessions.length / D.sessions.length : 1;
+  const totalReads = Math.round(((D.toolCounts['Read'] || 0) + (D.toolCounts['View'] || 0)) * scaleFactor);
+  const bash       = Math.round((D.toolCounts['Bash'] || 0) * scaleFactor);
+
+  const filterHtml = `
+    <div class="habit-filter-row">
+      <label>Period:</label>
+      <select id="habit-filter" onchange="habitWeeks=+this.value;buildHabits()">
+        <option value="2"${habitWeeks===2?' selected':''}>Last 2 weeks</option>
+        <option value="4"${habitWeeks===4?' selected':''}>Last 4 weeks</option>
+        <option value="6"${habitWeeks===6?' selected':''}>Last 6 weeks</option>
+        <option value="12"${habitWeeks===12?' selected':''}>Last 12 weeks</option>
+        <option value="0"${habitWeeks===0?' selected':''}>All time</option>
+      </select>
+    </div>`;
+
+  if (!filteredSessions.length) {
+    $('panel-habits').innerHTML = `
+      <div class="pg-hdr">
+        <div class="pg-title">Bad Habits Detected</div>
+        <div class="pg-sub">Patterns in your usage that inflate cost</div>
+        ${filterHtml}
+      </div>
+      <div class="habit info">
+        <div><div class="htt">No Data in This Period</div>
+             <div class="hds">No sessions found in the selected date range. Try a wider window.</div></div>
+        <div class="hbdg bdr-b">no data</div>
+      </div>`;
+    return;
+  }
 
   const habits = [];
 
-  if (weeks.length >= 3) {
-    const r = weeks.slice(-3).map(w=>w.cost);
+  if (wkData.length >= 3) {
+    const r = wkData.slice(-3).map(w => w.cost);
     if (r[2]>r[1] && r[1]>r[0])
       habits.push({sev:'crit',t:'Cost Trending Up 3 Weeks Running',
-        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Costs are rising.`,b:'↑ rising',bc:'bdr-r'});
+        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Costs are rising.`,b:'↑ rising',bc:'bdr-r',
+        exp:'Costs rising week-over-week signal scope creep or growing context windows.',
+        weeklyData:wkData,accessor:w=>w.cost,color:'#ff6b6b',labelFmt:fmtC});
     else if (r[2]<r[1] && r[1]<r[0])
       habits.push({sev:'info',t:'Cost Trending Down ✓',
-        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Habits improving.`,b:'↓ falling',bc:'bdr-g'});
+        d:`Last 3 weeks: ${r.map(fmtC).join(' → ')}. Habits improving.`,b:'↓ falling',bc:'bdr-g',
+        exp:'Falling costs indicate improving habits — keep sessions focused.',
+        weeklyData:wkData,accessor:w=>w.cost,color:'#47ff8a',labelFmt:fmtC});
   }
 
   if (avgIn > 20000)
     habits.push({sev:'crit',t:'Very Large Context Windows',
       d:`Average session input: ${fmt(avgIn)} tokens. Every turn re-sends all prior messages. Use /clear to reset mid-session.`,
-      b:`${fmt(avgIn)} avg input`,bc:'bdr-r'});
+      b:`${fmt(avgIn)} avg input`,bc:'bdr-r',
+      exp:'Re-sending 20k+ tokens every turn multiplies cost fast; use /clear to reset.',
+      weeklyData:wkData,accessor:w=>w.avgInput,color:'#ff6b6b',labelFmt:v=>fmt(v)});
   else if (avgIn > 8000)
     habits.push({sev:'warn',t:'Growing Context Windows',
       d:`Average session input: ${fmt(avgIn)} tokens. Break long work into focused sub-sessions.`,
-      b:`${fmt(avgIn)} avg input`,bc:'bdr-y'});
+      b:`${fmt(avgIn)} avg input`,bc:'bdr-y',
+      exp:'Context above 8k tokens per turn; break long tasks into sub-sessions.',
+      weeklyData:wkData,accessor:w=>w.avgInput,color:'#e8ff47',labelFmt:v=>fmt(v)});
 
   if (totalReads > 20)
     habits.push({sev:'crit',t:'Excessive File Reading',
       d:`${totalReads} Read/View calls. Use offset+limit. Ask Claude to search/grep before reading entire files.`,
-      b:`${totalReads} reads`,bc:'bdr-r'});
+      b:`${totalReads} reads`,bc:'bdr-r',
+      exp:'Each full-file read adds all tokens to context; use offset+limit or grep first.',
+      weeklyData:wkData,accessor:w=>w.toolCalls,color:'#ff6b6b',labelFmt:v=>String(Math.round(v))});
   else if (totalReads > 5)
     habits.push({sev:'warn',t:'Frequent File Reading',
-      d:`${totalReads} file reads. Check for redundant re-reads.`,b:`${totalReads} reads`,bc:'bdr-y'});
+      d:`${totalReads} file reads. Check for redundant re-reads.`,b:`${totalReads} reads`,bc:'bdr-y',
+      exp:'Repeated reads add up; check for redundant re-reads in the same session.',
+      weeklyData:wkData,accessor:w=>w.toolCalls,color:'#e8ff47',labelFmt:v=>String(Math.round(v))});
 
   if (errReads > 0)
     habits.push({sev:'crit',t:'Files Hit Token Limit',
       d:`${errReads} read(s) exceeded the file token cap — doubled cost. Always pass offset+limit for large files.`,
-      b:`${errReads} failed reads`,bc:'bdr-r'});
+      b:`${errReads} failed reads`,bc:'bdr-r',
+      exp:'Over-limit reads are truncated and billed twice; always pass offset+limit.',
+      weeklyData:wkData,accessor:w=>w.toolCalls,color:'#ff6b6b',labelFmt:v=>String(Math.round(v))});
 
   if (cacheHit >= 0.5)
     habits.push({sev:'info',t:'Good Cache Utilization ✓',
       d:`${(cacheHit*100).toFixed(0)}% of input from cache (10× cheaper). Keep sessions focused.`,
-      b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-g'});
+      b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-g',
+      exp:'50%+ cache hits means you pay 10× less per cached token — great habit.',
+      weeklyData:wkData,accessor:w=>w.cacheHitPct,color:'#47d4ff',labelFmt:v=>v+'%'});
   else
     habits.push({sev:'warn',t:'Low Cache Hit Rate',
       d:`Only ${(cacheHit*100).toFixed(0)}% cache hits. Focused sessions + stable CLAUDE.md improve this.`,
-      b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-y'});
+      b:`${(cacheHit*100).toFixed(0)}% cache hit`,bc:'bdr-y',
+      exp:'Frequent context resets or topic switching reduces cache effectiveness.',
+      weeklyData:wkData,accessor:w=>w.cacheHitPct,color:'#e8ff47',labelFmt:v=>v+'%'});
 
   if (outRatio > 0.25)
     habits.push({sev:'warn',t:'High Output Token Ratio',
       d:`Output is ${(outRatio*100).toFixed(0)}% of spend. Output costs 5× more. Add "be concise" globally to CLAUDE.md.`,
-      b:`${(outRatio*100).toFixed(0)}% output`,bc:'bdr-y'});
+      b:`${(outRatio*100).toFixed(0)}% output`,bc:'bdr-y',
+      exp:'Output costs 5× input; instruct Claude to be concise in CLAUDE.md.',
+      weeklyData:wkData,accessor:w=>w.outputRatio,color:'#c47aff',labelFmt:v=>v+'%'});
 
   if (bash > 30)
     habits.push({sev:'warn',t:'High Bash Tool Usage',
       d:`${bash} Bash calls. Chain commands in one call instead of separate turns.`,
-      b:`${bash} bash calls`,bc:'bdr-y'});
+      b:`${bash} bash calls`,bc:'bdr-y',
+      exp:'Chaining commands in one Bash call saves a full round-trip per extra call.',
+      weeklyData:wkData,accessor:w=>w.toolCalls,color:'#e8ff47',labelFmt:v=>String(Math.round(v))});
 
   if (!habits.length)
-    habits.push({sev:'info',t:'No Major Issues Found',d:'Load more sessions for a complete picture.',b:'all clear',bc:'bdr-b'});
+    habits.push({sev:'info',t:'No Major Issues Found',
+      d:'Load more sessions for a complete picture.',b:'all clear',bc:'bdr-b',
+      exp:'No problematic patterns detected — your usage looks efficient!',
+      weeklyData:[],accessor:w=>0,color:'#47ff8a',labelFmt:v=>String(v)});
+
+  habits.forEach((h, i) => { h.chartId = 'hchart-' + i; });
 
   $('panel-habits').innerHTML = `
     <div class="pg-hdr">
       <div class="pg-title">Bad Habits Detected</div>
       <div class="pg-sub">Patterns in your usage that inflate cost</div>
+      ${filterHtml}
     </div>
     ${habits.map(h=>`
       <div class="habit ${h.sev}">
-        <div><div class="htt">${h.t}</div><div class="hds">${h.d}</div></div>
+        <div>
+          <div class="htt">${h.t}</div>
+          <div class="hds">${h.d}</div>
+          ${h.weeklyData.length >= 2
+            ? `<canvas id="${h.chartId}" class="habit-chart" height="50"></canvas>`
+            : `<div class="habit-chart-empty">Not enough data for trend</div>`}
+          <div class="hexp">${h.exp}</div>
+        </div>
         <div class="hbdg ${h.bc}">${h.b}</div>
       </div>`).join('')}
   `;
+
+  habits.forEach(h => {
+    if (h.weeklyData.length >= 2) drawLine(h.chartId, h.weeklyData, h.accessor, h.color, h.labelFmt);
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
