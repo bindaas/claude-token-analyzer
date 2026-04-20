@@ -81,7 +81,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
 .bval{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt);text-align:right}
 .bval2{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--mut);text-align:right}
 
-.trend-wrap{position:relative;margin-bottom:6px}
+.trend-wrap{position:relative;margin-bottom:6px;overflow-x:auto}
 .trend-c{width:100%;display:block}
 
 .pcmp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
@@ -219,7 +219,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--txt
     <div class="nav-sec">
       <div class="nav-lbl">Overview</div>
       <div class="nav-item on" data-p="overview"><div class="ndot"></div>Summary</div>
-      <div class="nav-item" data-p="daily"><div class="ndot"></div>Daily <div class="ntag tn">chart</div></div>
+      <div class="nav-item" data-p="daily"><div class="ndot"></div>Token Usage <div class="ntag tn">chart</div></div>
       <div class="nav-item" data-p="trend"><div class="ndot"></div>Weekly</div>
       <div class="nav-item" data-p="projects"><div class="ndot"></div>By Project</div>
     </div>
@@ -357,7 +357,7 @@ function renderAll() {
       const pnl = $('panel-'+el.dataset.p);
       if (pnl) pnl.classList.add('on');
       if (el.dataset.p === 'trend')  setTimeout(drawTrends, 40);
-      if (el.dataset.p === 'daily')  setTimeout(drawDailyChart, 40);
+      if (el.dataset.p === 'daily')  { setTimeout(drawDailyChart, 40); setTimeout(drawWeeklyTokenChart, 40); }
       if (el.dataset.p === 'models') setTimeout(drawModelDonut, 40);
     };
   });
@@ -365,7 +365,7 @@ function renderAll() {
   const active = $('panel-'+activePanel);
   if (active) active.classList.add('on');
   if (activePanel === 'trend')  setTimeout(drawTrends, 40);
-  if (activePanel === 'daily')  setTimeout(drawDailyChart, 40);
+  if (activePanel === 'daily')  { setTimeout(drawDailyChart, 40); setTimeout(drawWeeklyTokenChart, 40); }
   if (activePanel === 'models') setTimeout(drawModelDonut, 40);
 }
 
@@ -457,99 +457,193 @@ function renderInsightCard(ins) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DAILY CHART
+// DAILY / WEEKLY TOKEN USAGE CHART
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Shared color constants for the 5 metrics (daily + weekly)
+const TOKEN_COLORS = {
+  input:       '#4e9af1',  // blue
+  cache_write: '#e8ff47',  // yellow
+  cache_read:  '#47ffb0',  // green
+  output:      '#c47aff',  // purple
+  cost:        '#ff9a3c',  // orange
+};
+
+// Returns per-ISO-week aggregates from dailyUsage array
+function aggregateWeekly(daily) {
+  const map = {};
+  for (const d of daily) {
+    const dt = new Date(d.date + 'T00:00:00');
+    // ISO week: adjust so Monday=0
+    const day = (dt.getDay() + 6) % 7;
+    const monday = new Date(dt);
+    monday.setDate(dt.getDate() - day);
+    const key = monday.toISOString().slice(0, 10);
+    if (!map[key]) map[key] = { week: key, input: 0, cache_write: 0, cache_read: 0, output: 0, cost: 0 };
+    map[key].input       += d.input       || 0;
+    map[key].cache_write += d.cache_write || 0;
+    map[key].cache_read  += d.cache_read  || 0;
+    map[key].output      += d.output      || 0;
+    map[key].cost        += d.cost        || 0;
+  }
+  return Object.values(map).sort((a, b) => a.week.localeCompare(b.week));
+}
+
 function buildDaily() {
   const daily = D.dailyUsage || [];
   const el = $('panel-daily');
   if (!daily.length) {
-    el.innerHTML = '<div class="pg-hdr"><div class="pg-title">Daily Usage</div></div><div style="color:var(--mut);font-size:12px">Not enough data yet.</div>';
+    el.innerHTML = '<div class="pg-hdr"><div class="pg-title">Token Usage</div></div><div style="color:var(--mut);font-size:12px">Not enough data yet.</div>';
     return;
   }
 
-  // Show last 60 days
-  const shown = daily.slice(-60);
-  const maxCost = Math.max(...shown.map(d => d.cost), 0.001);
+  const shown = daily.slice(-21);
+  const legendHtml = Object.entries({ Input: 'input', 'Cache Write': 'cache_write', 'Cache Read': 'cache_read', Output: 'output', Cost: 'cost' })
+    .map(([label, key]) => `<span><span style="display:inline-block;width:8px;height:8px;background:${TOKEN_COLORS[key]};border-radius:1px;margin-right:4px"></span>${label}</span>`)
+    .join('');
 
   el.innerHTML = `
     <div class="pg-hdr">
-      <div class="pg-title">Daily Usage</div>
-      <div class="pg-sub">Stacked by token type · last ${shown.length} days</div>
+      <div class="pg-title">Token Usage</div>
+      <div class="pg-sub">5 metrics per day · last ${shown.length} days</div>
     </div>
 
     <div class="card">
-      <div class="card-ttl">Daily Token Volume (stacked)</div>
-      <div class="trend-wrap"><canvas id="dailyStackCanvas" class="trend-c" height="160"></canvas></div>
-      <div style="display:flex;gap:16px;margin-top:8px;font-size:10px;font-family:'IBM Plex Mono',monospace">
-        <span><span style="display:inline-block;width:8px;height:8px;background:#e8ff47;border-radius:1px;margin-right:4px"></span>Input</span>
-        <span><span style="display:inline-block;width:8px;height:8px;background:#ff6b35;border-radius:1px;margin-right:4px"></span>Cache Write</span>
-        <span><span style="display:inline-block;width:8px;height:8px;background:#47d4ff;border-radius:1px;margin-right:4px"></span>Cache Read</span>
-        <span><span style="display:inline-block;width:8px;height:8px;background:#c47aff;border-radius:1px;margin-right:4px"></span>Output</span>
+      <div class="card-ttl">Daily Token Volume</div>
+      <div class="trend-wrap"><canvas id="dailyGroupCanvas" class="trend-c" height="200"></canvas></div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:10px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap">
+        ${legendHtml}
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-ttl">Daily Cost — bar chart</div>
-      <div class="bar-chart">
-        ${shown.slice(-20).reverse().map(d => `
-          <div class="bar-row br3">
-            <div class="blbl">${d.date.slice(5)}</div>
-            <div class="btrk"><div class="bfil" style="width:${(d.cost/maxCost*100).toFixed(0)}%;background:var(--acc2)"></div></div>
-            <div class="bval tc">${fmtC(d.cost)}</div>
-          </div>`).join('')}
+    <div class="card" style="margin-top:24px">
+      <div class="card-ttl">Weekly Token Usage</div>
+      <div class="trend-wrap"><canvas id="weeklyGroupCanvas" class="trend-c" height="200"></canvas></div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:10px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap">
+        ${legendHtml}
       </div>
     </div>
   `;
 }
 
-function drawDailyChart() {
-  const canvas = $('dailyStackCanvas');
-  if (!canvas) return;
-  const daily = D.dailyUsage || [];
-  const shown = daily.slice(-60);
-  if (!shown.length) return;
+// Draws a grouped 5-bar chart onto the given canvas.
+// items: array of objects with { label, input, cache_write, cache_read, output, cost }
+function drawGroupedTokenChart(canvasId, items) {
+  const canvas = $(canvasId);
+  if (!canvas || !items.length) return;
 
-  const W = canvas.parentElement.clientWidth || 600;
-  const H = 160;
+  const W = Math.max(canvas.parentElement.clientWidth || 600, items.length * 30);
+  const H = 200;
   canvas.width  = W;
   canvas.height = H;
+  // Allow horizontal scroll on narrow screens
+  canvas.style.minWidth = (items.length * 30) + 'px';
   const ctx = canvas.getContext('2d');
 
-  const pad = { t: 10, r: 10, b: 28, l: 10 };
+  const pad = { t: 16, r: 52, b: 32, l: 46 };
   const cw = W - pad.l - pad.r;
   const ch = H - pad.t - pad.b;
-  const barW = Math.max(2, Math.floor(cw / shown.length) - 1);
 
-  const maxTotal = Math.max(...shown.map(d => d.input + d.output + d.cache_write + d.cache_read), 1);
+  const METRICS = ['input', 'cache_write', 'cache_read', 'output'];
+  const maxTokens = Math.max(...items.map(d => METRICS.reduce((s, k) => s + (d[k] || 0), 0)), 1);
+  const maxCost   = Math.max(...items.map(d => d.cost || 0), 0.0001);
 
-  shown.forEach((d, i) => {
-    const x = pad.l + (i / shown.length) * cw;
-    const total = d.input + d.output + d.cache_write + d.cache_read;
-    const scale = ch / maxTotal;
+  const slotW  = cw / items.length;
+  const gap    = Math.max(1, slotW * 0.12);
+  const barW   = Math.max(1, (slotW - gap) / 5);
 
-    const layers = [
-      { val: d.input,       color: '#e8ff47' },
-      { val: d.cache_write, color: '#ff6b35' },
-      { val: d.cache_read,  color: '#47d4ff' },
-      { val: d.output,      color: '#c47aff' },
-    ];
+  // Left Y-axis gridlines + labels (tokens)
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 1;
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const y = pad.t + ch - (i / ticks) * ch;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+    const val = (maxTokens * i / ticks);
+    ctx.fillStyle = '#666';
+    ctx.font = '8px "IBM Plex Mono",monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(val >= 1e6 ? (val/1e6).toFixed(1)+'M' : val >= 1e3 ? (val/1e3).toFixed(0)+'K' : val.toFixed(0), pad.l - 3, y + 3);
+  }
 
-    let yOffset = pad.t + ch;
-    for (const layer of layers) {
-      const h = layer.val * scale;
-      yOffset -= h;
-      ctx.fillStyle = layer.color;
-      ctx.fillRect(x, yOffset, barW, h);
-    }
+  // Right Y-axis labels (cost)
+  for (let i = 0; i <= ticks; i++) {
+    const y = pad.t + ch - (i / ticks) * ch;
+    const val = maxCost * i / ticks;
+    ctx.fillStyle = TOKEN_COLORS.cost;
+    ctx.font = '8px "IBM Plex Mono",monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('$' + val.toFixed(2), pad.l + cw + 3, y + 3);
+  }
 
-    // x-axis label every ~7 days
-    if (shown.length <= 30 || i % 7 === 0) {
-      ctx.fillStyle = '#555';
-      ctx.font = '8px "IBM Plex Mono",monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(d.date.slice(5), x + barW / 2, H - 5);
-    }
+  // Bars
+  items.forEach((d, i) => {
+    const slotX = pad.l + i * slotW + gap / 2;
+
+    const tokenKeys = ['input', 'cache_write', 'cache_read', 'output'];
+    tokenKeys.forEach((key, bi) => {
+      const h = Math.max(1, ((d[key] || 0) / maxTokens) * ch);
+      const x = slotX + bi * barW;
+      const y = pad.t + ch - h;
+      ctx.fillStyle = TOKEN_COLORS[key];
+      ctx.fillRect(x, y, barW - 0.5, h);
+    });
+
+    // Cost bar (5th bar, secondary scale)
+    const costH = Math.max(1, ((d.cost || 0) / maxCost) * ch);
+    const costX = slotX + 4 * barW;
+    ctx.fillStyle = TOKEN_COLORS.cost;
+    ctx.fillRect(costX, pad.t + ch - costH, barW - 0.5, costH);
+
+    // X-axis label
+    ctx.fillStyle = '#555';
+    ctx.font = '8px "IBM Plex Mono",monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.label, slotX + (slotW - gap) / 2, H - 5);
   });
+}
+
+// Returns a dense array of the last N calendar days, filling missing days with zeros.
+function fillDailyGaps(daily, days) {
+  const byDate = {};
+  for (const d of daily) byDate[d.date] = d;
+  const result = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const dt = new Date();
+    dt.setDate(dt.getDate() - i);
+    const date = dt.toISOString().slice(0, 10);
+    result.push(byDate[date] || { date, input: 0, output: 0, cache_write: 0, cache_read: 0, cost: 0, sessions: 0 });
+  }
+  return result;
+}
+
+function drawDailyChart() {
+  const daily = D.dailyUsage || [];
+  const shown = fillDailyGaps(daily, 21).map(d => ({ ...d, label: d.date.slice(5) }));
+  drawGroupedTokenChart('dailyGroupCanvas', shown);
+}
+
+function drawWeeklyTokenChart() {
+  const daily = D.dailyUsage || [];
+  // Use gap-filled daily data so weeks with no sessions still appear
+  const filled = fillDailyGaps(daily, 12 * 7);
+  const byWeek = {};
+  for (const d of filled) {
+    const dt = new Date(d.date + 'T00:00:00');
+    const day = (dt.getDay() + 6) % 7;
+    const monday = new Date(dt);
+    monday.setDate(dt.getDate() - day);
+    const key = monday.toISOString().slice(0, 10);
+    if (!byWeek[key]) byWeek[key] = { week: key, input: 0, cache_write: 0, cache_read: 0, output: 0, cost: 0 };
+    byWeek[key].input       += d.input       || 0;
+    byWeek[key].cache_write += d.cache_write || 0;
+    byWeek[key].cache_read  += d.cache_read  || 0;
+    byWeek[key].output      += d.output      || 0;
+    byWeek[key].cost        += d.cost        || 0;
+  }
+  const weeks = Object.values(byWeek).sort((a, b) => a.week.localeCompare(b.week)).slice(-12)
+    .map(w => ({ ...w, label: w.week.slice(5) }));
+  drawGroupedTokenChart('weeklyGroupCanvas', weeks);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
